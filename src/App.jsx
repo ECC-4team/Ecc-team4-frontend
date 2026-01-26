@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import TripsPage from './pages/TripsPage';
 import TripCreatePage from './pages/TripCreatePage';
-import PlacesPage from './pages/PlacesPage';
+import PlacesPage from './pages/PlacesPage.jsx';
 import PlaceDetailPage from './pages/PlaceDetailPage';
 import TimelinePage from './pages/TimelinePage';
 
@@ -12,7 +12,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* 로그인 */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
 
         {/* 메인(여행 목록) */}
         <Route path="/trips" element={<TripsPage />} />
