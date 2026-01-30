@@ -1,34 +1,38 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import LoginPage from './pages/LoginPage';
+import TripsPage from './pages/TripsPage';
+import TripCreatePage from './pages/TripCreatePage';
+import PlacesPage from './pages/PlacesPage.jsx';
+import PlaceDetailPage from './pages/PlaceDetailPage';
+import TimelinePage from './pages/TimelinePage';
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        {/* 로그인 */}
+        <Route path="/" element={<LoginPage />} />
+
+        {/* 메인(여행 목록) */}
+        <Route path="/trips" element={<TripsPage />} />
+
+        {/* 여행 추가 */}
+        <Route path="/trips/new" element={<TripCreatePage />} />
+
+        {/* 장소 리스트 */}
+        <Route path="/trips/:tripId/places" element={<PlacesPage />} />
+
+        {/* 장소 상세 */}
+        <Route
+          path="/trips/:tripId/places/:placeId"
+          element={<PlaceDetailPage />}
+        />
+
+        {/* 일정 타임라인 */}
+        <Route path="/trips/:tripId/timeline" element={<TimelinePage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
