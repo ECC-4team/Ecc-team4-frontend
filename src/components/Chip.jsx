@@ -30,8 +30,7 @@ const ChipWrapper = styled.div`
   padding: ${({ padding = '6px 12px' }) => padding};
   border-radius: ${({ radius = '16px' }) => radius};
 
-  background-color: ${({ selected }) =>
-    selected ? 'white' : 'transparent'};
+  background-color: ${({ selected }) => selected ? 'white' : 'transparent'};
 
   color: ${({ selected }) => (selected ? '#111827' : '#6b7280')};
   font-size: 14px;
