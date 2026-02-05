@@ -9,6 +9,7 @@ export default function Button({
   disabled = false, // 비활성화
   onClick,
   type = 'button',
+  style,
 }) {
   return (
     <StyledButton
@@ -18,6 +19,7 @@ export default function Button({
       disabled={disabled}
       onClick={onClick}
       type={type}
+      style={style}
     >
       {children}
     </StyledButton>
@@ -32,6 +34,10 @@ const StyledButton = styled.button`
   border: none;
   cursor: pointer;
   font-size: 14px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     opacity: 0.9;

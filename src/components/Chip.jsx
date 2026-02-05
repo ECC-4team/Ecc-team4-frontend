@@ -1,20 +1,13 @@
 import styled from '@emotion/styled';
-import { useState } from 'react';
 
-export default function Chip({ label, onClick, onClose, padding, radius }) {
-  const [selected, setSelected] = useState(false);
-
-  const handleClick = () => {
-    setSelected(!selected); // 클릭 시 선택 토글
-    if (onClick) onClick();
-  };
+export default function Chip({ label, onClick, onClose, padding, radius, selected = false}) {
 
   return (
     <ChipWrapper
       padding={padding}
       radius={radius}
       selected={selected}
-      onClick={handleClick}
+      onClick={onClick}
     >
       <ChipLabel>{label}</ChipLabel>
       {onClose && (
@@ -36,15 +29,20 @@ const ChipWrapper = styled.div`
   align-items: center;
   padding: ${({ padding = '6px 12px' }) => padding};
   border-radius: ${({ radius = '16px' }) => radius};
-  background-color: ${({ selected }) => (selected ? '#2563eb' : '#f3f4f6')};
-  color: ${({ selected }) => (selected ? 'white' : 'black')};
+
+  background-color: ${({ selected }) =>
+    selected ? 'white' : 'transparent'};
+
+  color: ${({ selected }) => (selected ? '#111827' : '#6b7280')};
   font-size: 14px;
+  font-weight: ${({ selected }) => (selected ? 600 : 500)};
+
   cursor: pointer;
   margin: 4px;
   user-select: none;
 
   &:hover {
-    background-color: ${({ selected }) => (selected ? '#2563eb' : '#e5e7eb')};
+    background-color: white;
   }
 `;
 

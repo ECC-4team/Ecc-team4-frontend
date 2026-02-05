@@ -6,7 +6,6 @@ export const Container = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #f8faff;
 `;
 
 export const Header = styled.div`
@@ -15,23 +14,22 @@ export const Header = styled.div`
 `;
 
 export const Logo = styled.div`
-  width: 50px;
-  height: 50px;
-  background: #2563eb;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
-  margin: 0 auto 15px;
+  margin-bottom: -60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
+
+  img { width: 100%; height: 100%; object-fit: contain;}
 `;
 
 export const Card = styled.div`
   background: white;
   padding: 40px;
   border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0px 4px 20px rgba(37, 99, 235, 0.18);
   width: 100%;
   max-width: 420px;
 `;
@@ -70,5 +68,31 @@ export const InputGroup = styled.div`
     background: #f9fafb;
     outline: none;
     &:focus { border-color: #2563eb; }
+  }
+`;
+
+export const InputWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input-icon {
+    position: absolute;
+    left: 15px;      
+    color: #9ca3af; 
+    font-size: 18px;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 12px 12px 45px; 
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background-color: #f9fafb;
+    outline: none;
+
+    &:focus {
+      border-color: #2563eb;
+    }
   }
 `;
