@@ -7,6 +7,7 @@ import PlacesPage from './pages/PlacesPage.jsx';
 import PlaceDetailPage from './pages/PlaceDetailPage';
 import TimelinePage from './pages/TimelinePage';
 
+
 function App() {
   return (
     <BrowserRouter>
