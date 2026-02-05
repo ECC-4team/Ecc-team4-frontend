@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import * as S from './LoginPage.styles';
-import Button from '../components/common/Button'; // 경로에 맞춰 수정하세요
-import Chip from '../components/common/Chip';     // 경로에 맞춰 수정하세요
+import Button from '../components/Button'; 
+import Chip from '../components/Chip';     
 
 function LoginPage() {
   const navigate = useNavigate();
