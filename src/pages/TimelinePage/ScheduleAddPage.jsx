@@ -6,9 +6,17 @@ import TextArea from '../../components/TextArea';
 import Button from '../../components/Button';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import Chip from '../../components/Chip';
 
-import { PageWrapper, Label, Row, ChipRow } from './ScheduleAddPage.styles';
+import {
+  PageWrapper,
+  CardWrapper,
+  Label,
+  Row,
+  ChipRow,
+  DatePickerWrapper,
+  TimeRangeWrapper,
+  TextAreaWrapper,
+} from './ScheduleAddPage.styles';
 
 const MOCK_PLACES = [
   { value: 1, label: '서울 시내' },
@@ -23,76 +31,140 @@ export default function ScheduleAddPage() {
   const navigate = useNavigate();
 
   const [selectedPlace, setSelectedPlace] = useState('');
+
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
+
   const [selectedCategory, setSelectedCategory] = useState('');
   const [memo, setMemo] = useState('');
 
   const handleSave = () => {
+    if (!startTime || !endTime) return;
+
+    const startDateTime = new Date(selectedDate);
+    startDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+
+    const endDateTime = new Date(selectedDate);
+    endDateTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+
     navigate(-1);
   };
 
+  const isInvalidTime = startTime && endTime && endTime <= startTime;
+
   return (
     <PageWrapper>
-      <Card>
-        <Row>
-          <Label>장소</Label>
-          <Select
-            options={MOCK_PLACES}
-            value={selectedPlace}
-            onChange={(e) => setSelectedPlace(e.target.value)}
-            width="100%"
-          />
-        </Row>
+      <CardWrapper>
+        <Card>
+          <Row>
+            <Label>장소</Label>
+            <Select
+              options={MOCK_PLACES}
+              value={selectedPlace}
+              onChange={(e) => setSelectedPlace(e.target.value)}
+              style={{ flex: 1 }}
+            />
+          </Row>
 
-        <Row>
-          <Label>날짜</Label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={setSelectedDate}
-            dateFormat="yyyy.MM.dd"
-          />
-
-          <Label>시간</Label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={setSelectedDate}
-            showTimeSelect
-            showTimeSelectOnly
-            timeIntervals={30}
-            dateFormat="HH:mm"
-          />
-        </Row>
-
-        <Row>
-          <Label>카테고리</Label>
-          <ChipRow>
-            {CATEGORY_OPTIONS.map((cat) => (
-              <Chip
-                key={cat}
-                label={cat}
-                onClick={() => setSelectedCategory(cat)}
-                selected={selectedCategory === cat}
-                padding="4px 12px"
-                radius="16px"
+          <Row>
+            <Label>날짜</Label>
+            <DatePickerWrapper>
+              <DatePicker
+                selected={selectedDate}
+                onChange={setSelectedDate}
+                dateFormat="yyyy.MM.dd"
+                popperPlacement="bottom-start"
               />
-            ))}
-          </ChipRow>
-        </Row>
+            </DatePickerWrapper>
+          </Row>
 
-        <Row>
-          <Label>메모</Label>
-          <TextArea
-            rows={4}
-            placeholder="메모를 입력하세요"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            style={{ flex: 1 }}
-          />
-        </Row>
-      </Card>
+          <Row>
+            <Label>시간</Label>
+            <TimeRangeWrapper>
+              <DatePicker
+                selected={startTime}
+                onChange={setStartTime}
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={30}
+                dateFormat="HH:mm"
+                placeholderText="시작"
+              />
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <Button onClick={handleSave}>추가하기</Button>
+              <span className="tilde">-</span>
+
+              <DatePicker
+                selected={endTime}
+                onChange={setEndTime}
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={30}
+                dateFormat="HH:mm"
+                placeholderText="종료"
+              />
+            </TimeRangeWrapper>
+          </Row>
+
+          <Row alignTop>
+            <Label>카테고리</Label>
+            <ChipRow>
+              {CATEGORY_OPTIONS.map((cat) => {
+                const isSelected = selectedCategory === cat;
+
+                return (
+                  <div
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      backgroundColor: isSelected ? '#2563EB' : '#F3F4F6',
+                      cursor: 'pointer',
+                      margin: '4px',
+                      userSelect: 'none',
+                      transition: 'all 0.2s',
+                      color: isSelected ? '#fff' : '#111827',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {cat}
+                  </div>
+                );
+              })}
+            </ChipRow>
+          </Row>
+
+          <Row alignTop>
+            <Label>메모</Label>
+            <TextAreaWrapper>
+              <TextArea
+                rows={6}
+                placeholder="메모를 입력하세요"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                style={{ flex: 1 }}
+              />
+            </TextAreaWrapper>
+          </Row>
+        </Card>
+      </CardWrapper>
+
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          display: 'flex',
+          gap: '12px',
+        }}
+      >
+        <Button onClick={handleSave} disabled={isInvalidTime}>
+          추가하기
+        </Button>
         <Button onClick={() => navigate(-1)}>취소</Button>
       </div>
     </PageWrapper>

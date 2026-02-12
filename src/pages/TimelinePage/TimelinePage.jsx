@@ -1,20 +1,5 @@
-/*import { useParams } from 'react-router-dom';
-
-function TimelinePage() {
-  const { tripId } = useParams();
-
-  return (
-    <div>
-      <h1>{tripId} 여행 일정</h1>
-      <p>Day 1</p>
-      <p>Day 2</p>
-    </div>
-  );
-}
-
-export default TimelinePage;*/
-
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 import Card from '../../components/Card';
 import Input from '../../components/Input';
@@ -28,6 +13,7 @@ import {
   TimelineSection,
   SideSection,
   SideFooter,
+  PageTitle,
   TripHeader,
   TripHeaderCard,
   TripHeaderText,
@@ -47,7 +33,6 @@ import {
   Description,
   BlueLine,
   SideContent,
-  MemoImageBox,
   BudgetItem,
   BudgetLabel,
   Won,
@@ -64,6 +49,8 @@ const TIMELINE_DATA = {
       date: '2026.03.12',
       dayLabel: '목',
       theme: '시내 야경',
+      memo: '',
+      budget: { planned: '', spent: '' },
       schedules: [
         {
           time: '19:00',
@@ -81,6 +68,8 @@ const TIMELINE_DATA = {
       date: '2026.03.13',
       dayLabel: '금',
       theme: '시내 야경',
+      memo: '',
+      budget: { planned: '', spent: '' },
       schedules: [
         {
           time: '20:30',
@@ -93,6 +82,10 @@ const TIMELINE_DATA = {
 };
 
 export default function TimelinePage() {
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [daysData, setDaysData] = useState(TIMELINE_DATA.daysData);
+
+  const selectedDay = daysData[selectedDayIndex];
   const navigate = useNavigate();
 
   const handleSave = () => {
@@ -107,9 +100,21 @@ export default function TimelinePage() {
     }
   };
 
+  const handleMemoChange = (e) => {
+    const newDays = [...daysData];
+    newDays[selectedDayIndex].memo = e.target.value;
+    setDaysData(newDays);
+  };
+
+  const handleBudgetChange = (field, value) => {
+    const newDays = [...daysData];
+    newDays[selectedDayIndex].budget[field] = value;
+    setDaysData(newDays);
+  };
+
   return (
     <>
-      <h1>MY TIMELINE</h1>
+      <PageTitle>MY TIMELINE</PageTitle>
       <TabWrapper>
         <Tab tabs={VIEW_TABS} onChange={handleTabChange} defaultIndex={0} />
       </TabWrapper>
@@ -125,14 +130,26 @@ export default function TimelinePage() {
       <PageWrapper>
         <TimelineSection>
           {TIMELINE_DATA.daysData.map((day, index) => (
-            <DayBlock key={index}>
+            <DayBlock key={index} onClick={() => setSelectedDayIndex(index)}>
               <DayHeader>
-                <DateText>
-                  {day.date}
-                  <DayLabel>({day.dayLabel})</DayLabel>
-                </DateText>
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    boxShadow:
+                      selectedDayIndex === index
+                        ? '0 2px 6px rgba(0,0,0,0.15)'
+                        : 'none',
+                  }}
+                >
+                  <DateText>
+                    {day.date}
+                    <DayLabel>({day.dayLabel})</DayLabel>
+                  </DateText>
+                </div>
 
-                <Card padding="12px 16px" radius="12px">
+                <Card padding="4px 16px" radius="12px">
                   <DayHeaderCard>
                     <Title>하루 테마</Title>
                     <Description>{day.theme}</Description>
@@ -154,10 +171,18 @@ export default function TimelinePage() {
                       </Card>
 
                       <Card padding="16px" radius="12px">
-                        <FixedCardInner width={320}>
-                          <Title>{item.title}</Title>
-                          <Description>{item.description}</Description>
-                        </FixedCardInner>
+                        <div style={{ position: 'relative' }}>
+                          <div
+                            style={{ position: 'absolute', top: 0, right: 0 }}
+                          >
+                            <MoreMenu />
+                          </div>
+
+                          <FixedCardInner width={320}>
+                            <Title>{item.title}</Title>
+                            <Description>{item.description}</Description>
+                          </FixedCardInner>
+                        </div>
                       </Card>
                     </ContentRow>
                   </TimelineItem>
@@ -177,10 +202,11 @@ export default function TimelinePage() {
             </Card>
 
             <Card padding="16px" radius="12px">
-              <MemoImageBox>이미지</MemoImageBox>
               <TextArea
-                placeholder="오늘의 날씨, 할 일, 컨디션, 생각 등을 자유롭게 기록해 주세요"
+                placeholder="날짜를 클릭해 오늘의 날씨, 할 일, 컨디션, 생각 등을 자유롭게 기록해 주세요"
                 rows={8}
+                value={selectedDay.memo}
+                onChange={handleMemoChange}
               />
             </Card>
 
@@ -192,13 +218,23 @@ export default function TimelinePage() {
             <Card padding="16px" radius="12px">
               <BudgetItem>
                 <BudgetLabel>예산</BudgetLabel>
-                <Input placeholder="0" />
+                <Input
+                  placeholder="0"
+                  value={selectedDay.budget.planned}
+                  onChange={(e) =>
+                    handleBudgetChange('planned', e.target.value)
+                  }
+                />
                 <Won>원</Won>
               </BudgetItem>
 
               <BudgetItem style={{ marginTop: '12px' }}>
                 <BudgetLabel>지출</BudgetLabel>
-                <Input placeholder="0" />
+                <Input
+                  placeholder="0"
+                  value={selectedDay.budget.spent}
+                  onChange={(e) => handleBudgetChange('spent', e.target.value)}
+                />
                 <Won>원</Won>
               </BudgetItem>
             </Card>
@@ -214,5 +250,69 @@ export default function TimelinePage() {
         </SideSection>
       </PageWrapper>
     </>
+  );
+}
+
+function MoreMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* ⋮ 버튼 */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          background: 'none',
+          border: 'none',
+          fontSize: '18px',
+          cursor: 'pointer',
+        }}
+      >
+        ⋮
+      </button>
+
+      {/* 팝업 */}
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '24px',
+            left: '0',
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            zIndex: 10,
+            minWidth: '120px',
+          }}
+        >
+          <MenuItem onClick={() => alert('장소 보기')}>장소 보기</MenuItem>
+          <MenuItem onClick={() => alert('시간 수정')}>시간 수정</MenuItem>
+          <MenuItem onClick={() => alert('내용 수정')}>내용 수정</MenuItem>
+          <MenuItem danger onClick={() => alert('일정 삭제')}>
+            일정 삭제
+          </MenuItem>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ children, onClick, danger }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        padding: '8px 12px',
+        fontSize: '14px',
+        cursor: 'pointer',
+        color: danger ? '#dc2626' : '#111827',
+        whiteSpace: 'nowrap',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {children}
+    </div>
   );
 }

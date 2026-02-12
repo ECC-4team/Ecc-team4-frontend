@@ -8,6 +8,8 @@ import Input from '../../components/Input';
 import Tab from '../../components/Tab';
 import Button from '../../components/Button';
 import TextArea from '../../components/TextArea';
+import logoImg from '../../assets/logo.png';
+
 import {
   PageWrapper,
   FormContainer,
@@ -16,6 +18,7 @@ import {
   Label,
   TabContainer,
   DatePickerWrapper,
+  ImageUploadWrapper,
   FloatingButtonWrapper,
 } from './TripCreatePage.styles';
 
@@ -33,6 +36,12 @@ export default function TripCreatePage() {
   const navigate = useNavigate();
 
   const handleSave = () => {
+    const formData = new FormData();
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else {
+      formData.append('imageUrl', logoImg);
+    }
     const newTripId = '1'; // API가 반환하는 ID 넣기
     navigate(`/trips/${newTripId}/places`);
   };
@@ -65,6 +74,20 @@ export default function TripCreatePage() {
   const handleSelectEnd = (date) => {
     setEndDate(date);
     setOpenPicker(null);
+  };
+
+  /*이미지*/
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImageFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
   };
 
   return (
@@ -137,12 +160,33 @@ export default function TripCreatePage() {
           </Row>
 
           <Row alignTop>
+            <Label>대표 이미지</Label>
+            <div style={{ flex: 1 }}>
+              <ImageUploadWrapper>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="대표 이미지 미리보기" />
+                ) : (
+                  <div className="placeholder">이미지를 선택해주세요</div>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </ImageUploadWrapper>
+            </div>
+          </Row>
+
+          <Row alignTop>
             <Label>메모</Label>
-            <TextArea
-              value={form.memo}
-              onChange={handleChange('memo')}
-              placeholder="여행 메모"
-            />
+            <div style={{ flex: 1 }}>
+              <TextArea
+                value={form.memo}
+                onChange={handleChange('memo')}
+                placeholder="여행 메모"
+              />
+            </div>
           </Row>
         </Form>{' '}
       </FormContainer>

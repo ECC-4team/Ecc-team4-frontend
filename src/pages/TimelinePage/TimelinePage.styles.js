@@ -11,6 +11,15 @@ export const PageWrapper = styled.div`
 
 export const TabWrapper = styled.div`
   margin-bottom: 16px;
+  display: inline-block;
+  min-width: 280px;
+  max-width: 360px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-left: 90px;
+
+  transform: scale(0.8);
+  transform-origin: left center;
 `;
 
 export const Column = styled.div`
@@ -36,15 +45,24 @@ export const SideFooter = styled.div`
 `;
 
 /* ===== Trip Header ===== */
+export const PageTitle = styled.h1`
+  max-width: 800px;
+  margin: 0 auto 12px;
+  margin-left: 90px;
+  font-size: 28px;
+  font-weight: 700;
+`;
+
 export const TripHeader = styled.div`
   margin-bottom: 48px;
+  padding-left: 90px;
 `;
 
 export const TripHeaderCard = styled.div`
   background-color: #111827;
   color: white;
   border-radius: 16px;
-  padding: 20px 24px;
+  padding: 10px 24px;
   display: inline-block;
   width: fit-content;
 `;
@@ -68,7 +86,7 @@ export const DayHeader = styled.div`
 `;
 
 export const DateText = styled.div`
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   color: #111827;
 `;
@@ -177,21 +195,6 @@ export const BlueLine = styled.div`
 
 export const SideContent = styled(Column)`
   gap: 24px;
-`;
-
-export const MemoImageBox = styled.div`
-  height: 120px;
-  background-color: #f3f4f6;
-  border-radius: 8px;
-  margin-top: 12px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  font-size: 14px;
-
-  margin-bottom: 16px;
 `;
 
 /* ===== Budget ===== */
