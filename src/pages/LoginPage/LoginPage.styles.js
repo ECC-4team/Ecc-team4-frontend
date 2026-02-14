@@ -9,15 +9,19 @@ export const Container = styled.div`
 `;
 
 export const Header = styled.div`
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 30px;
+  text-align: center;
+  width: 100&;
 `;
 
 export const Logo = styled.div`
-  width: 200px;
-  height: 200px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  margin-bottom: -60px;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,15 +64,6 @@ export const InputGroup = styled.div`
     font-weight: 600;
     color: #4b5563;
   }
-
-  input {
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    outline: none;
-    &:focus { border-color: #2563eb; }
-  }
 `;
 
 export const InputWrapper = styled.div`
@@ -86,13 +81,21 @@ export const InputWrapper = styled.div`
   input {
     width: 100%;
     padding: 12px 12px 12px 45px; 
-    border: 1px solid #e5e7eb;
+    border: 1px solid ${({ isError }) => (isError ? 'red' : '#e5e7eb')};
     border-radius: 12px;
     background-color: #f9fafb;
     outline: none;
 
     &:focus {
-      border-color: #2563eb;
+      border-color: ${({ isError }) => (isError ? 'red' : '#2563eb')};
     }
   }
+`;
+
+export const ErrorMessage = styled.span`
+  color: red;
+  font-size: 11px;
+  margin-top: -4px; /* 간격 미세 조정 */
+  margin-left: 4px;
+  height: 14px; /* 에러 메시지 유무에 따른 덜컹거림 방지 */
 `;

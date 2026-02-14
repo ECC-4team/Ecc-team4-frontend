@@ -3,10 +3,11 @@ import styled from '@emotion/styled';
 
 export default function Button({
   children,
-  bg, // 배경색
-  padding, // 패딩
-  radius, // 모서리 둥글기
-  disabled = false, // 비활성화
+  bg, 
+  padding, 
+  radius, 
+  width,  
+  disabled = false, 
   onClick,
   type = 'button',
   style,
@@ -16,6 +17,7 @@ export default function Button({
       bg={bg}
       padding={padding}
       radius={radius}
+      width={width}    
       disabled={disabled}
       onClick={onClick}
       type={type}
@@ -31,6 +33,10 @@ const StyledButton = styled.button`
   color: white;
   padding: ${({ padding = '12px 20px' }) => padding};
   border-radius: ${({ radius = '10px' }) => radius};
+  
+
+  width: ${({ width = 'auto' }) => width}; 
+  
   border: none;
   cursor: pointer;
   font-size: 14px;
