@@ -1,78 +1,151 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getTrips, deleteTrip } from '../../services/trip-main';
+import ReactPaginate from 'react-paginate';
+
 import Card from '../../components/Card';
 import Select from '../../components/Select';
-import { useState } from 'react';
+import logoImg from '../../assets/logo.png';
+
 import {
   PageWrapper,
+  PageTitle,
   Grid,
   ClickWrapper,
   FloatingAddButton,
   CardInner,
+  CardOverlay,
   Country,
   Period,
   FilterBar,
+  BlueSelectWrapper,
+  PaginationWrapper,
+  CardActions,
+  EditButton,
+  DeleteButton,
 } from './TripsPage.styles';
 
 const TRAVEL_FILTER_OPTIONS = [
-  { label: '새로운 여행', value: 'New' },
-  { label: '다녀온 여행', value: 'Past' },
+  { label: '새로운 여행', value: 1 },
+  { label: '다녀온 여행', value: 2 },
 ];
 
-const MOCK_TRAVELS = [
-  {
-    id: 1,
-    country: '대전',
-    period: '24.09.07.-24.09.10.',
-    status: 'New',
-  },
-  {
-    id: 2,
-    country: '바르셀로나',
-    period: '24.12.14.-24.12.19.',
-    status: 'Past',
-  },
-  {
-    id: 3,
-    country: '오사카',
-    period: '25.01.22.-25.01.25.',
-    status: 'New',
-  },
-];
+const ITEMS_PER_PAGE = 6;
+
+const formatPeriod = (startDate, endDate) => {
+  return `${startDate.replaceAll('-', '.')} - ${endDate.replaceAll('-', '.')}`;
+};
 
 export default function TripsPage() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState('New');
+  const location = useLocation();
 
-  const filteredTravels = MOCK_TRAVELS.filter(
-    (travel) => travel.status === filter,
-  );
+  const [filter, setFilter] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [travels, setTravels] = useState([]);
+
+  useEffect(() => {
+    getTrips()
+      .then((res) => {
+        setTravels(res.data);
+      })
+      .catch(() => {
+        alert('여행 목록을 불러오지 못했어요');
+      });
+  }, [location.pathname]);
+
+  const filteredTravels = travels.filter((travel) => travel.status === filter);
+
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentTravels = filteredTravels.slice(offset, offset + ITEMS_PER_PAGE);
+
+  const pageCount = Math.ceil(filteredTravels.length / ITEMS_PER_PAGE);
+
+  const handlePageClick = (selectedItem) => {
+    setCurrentPage(selectedItem.selected);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('이 여행을 삭제할까요?')) return;
+
+    try {
+      await deleteTrip(id);
+
+      setTravels((prev) => prev.filter((travel) => travel.tripId !== id));
+    } catch {
+      alert('삭제에 실패했어요');
+    }
+  };
 
   return (
     <PageWrapper>
-      <h1>나의 여행</h1>
+      <PageTitle>나의 여행</PageTitle>
       <FilterBar>
-        <Select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          options={TRAVEL_FILTER_OPTIONS}
-          width="160px"
-        />
+        <BlueSelectWrapper>
+          <Select
+            value={filter}
+            onChange={(e) => {
+              setFilter(Number(e.target.value));
+              setCurrentPage(0);
+            }}
+            options={TRAVEL_FILTER_OPTIONS}
+            width="160px"
+          />
+        </BlueSelectWrapper>
       </FilterBar>
+
       <Grid>
-        {filteredTravels.map((travel) => (
+        {currentTravels.map((travel) => (
           <ClickWrapper
-            key={travel.id}
-            onClick={() => navigate(`/trips/${travel.id}/places`)}
+            key={travel.tripId}
+            onClick={() => navigate(`/trips/${travel.tripId}/places`)}
           >
             <Card padding="0" radius="12px">
-              <CardInner>
-                <Country>{travel.country}</Country>
-                <Period>{travel.period}</Period>
+              <CardInner backgroundImage={travel.imageUrl || logoImg}>
+                <CardOverlay>
+                  <Country>{travel.destination}</Country>
+                  <Period>
+                    {formatPeriod(travel.startDate, travel.endDate)}
+                  </Period>
+
+                  <CardActions>
+                    <EditButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/trips/${travel.tripId}/edit`);
+                      }}
+                    >
+                      수정
+                    </EditButton>
+
+                    <DeleteButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(travel.tripId);
+                      }}
+                    >
+                      삭제
+                    </DeleteButton>
+                  </CardActions>
+                </CardOverlay>
               </CardInner>
             </Card>
           </ClickWrapper>
         ))}
       </Grid>
+
+      <PaginationWrapper>
+        <ReactPaginate
+          previousLabel={'<'}
+          nextLabel={'>'}
+          pageCount={pageCount}
+          onPageChange={handlePageClick}
+          containerClassName={'pagination'}
+          activeClassName={'active'}
+          pageRangeDisplayed={3}
+          marginPagesDisplayed={1}
+        />
+      </PaginationWrapper>
 
       <FloatingAddButton onClick={() => navigate('/trips/new')}>
         +
