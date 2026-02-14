@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage/LoginPage.jsx';
 import TripsPage from './pages/TripsPage/TripsPage.jsx';
 import TripCreatePage from './pages/TripCreatePage/TripCreatePage.jsx';
-import PlacesPage from './pages/PlacesPage.jsx';
-import PlaceDetailPage from './pages/PlaceDetailPage';
+import PlacesPage from './pages/PlacesPage/PlacesPage.jsx';
+import PlaceDetailPage from './pages/PlaceDetailPage/PlaceDetailPage.jsx';
 import TimelinePage from './pages/TimelinePage';
 
 
