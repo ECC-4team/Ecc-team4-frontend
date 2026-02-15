@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 import logoImg from '../../assets/logo.png';
-import { logoutUser } from '../../services/login'; 
+import { logoutUser } from '../../services/login';
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export default function Layout() {
   const Brand = styled.div`
     display: flex;
     align-items: center;
-    gap: 0px;
+    gap: 13px;
     cursor: pointer;
   `;
 

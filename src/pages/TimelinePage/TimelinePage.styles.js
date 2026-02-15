@@ -11,7 +11,8 @@ export const PageWrapper = styled.div`
 
 export const TabWrapper = styled.div`
   margin-bottom: 16px;
-  display: inline-block;
+  display: flex;
+  gap: 10px;
   min-width: 280px;
   max-width: 360px;
   border-radius: 8px;
@@ -20,6 +21,22 @@ export const TabWrapper = styled.div`
 
   transform: scale(0.8);
   transform-origin: left center;
+`;
+
+export const TabButton = styled.button`
+  padding: 8px 25px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background-color: ${(props) => (props.isActive ? '#587CFF' : '#E5E7EB')};
+  color: ${(props) => (props.isActive ? 'white' : '#6B7280')};
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: ${(props) => (props.isActive ? '#587CFF' : '#D1D5DB')};
+  }
 `;
 
 export const Column = styled.div`

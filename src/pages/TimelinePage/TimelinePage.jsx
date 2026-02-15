@@ -11,11 +11,11 @@ import Card from '../../components/Card';
 import Input from '../../components/Input';
 import TextArea from '../../components/TextArea';
 import Button from '../../components/Button';
-import Tab from '../../components/Tab';
 
 import {
   PageWrapper,
   TabWrapper,
+  TabButton,
   TimelineSection,
   SideSection,
   SideFooter,
@@ -67,6 +67,7 @@ export default function TimelinePage() {
   const [tripTitle, setTripTitle] = useState('');
   const [nights, setNights] = useState(0);
   const [days, setDays] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     async function fetchTimeline() {
@@ -204,7 +205,18 @@ export default function TimelinePage() {
     <>
       <PageTitle>MY TIMELINE</PageTitle>
       <TabWrapper>
-        <Tab tabs={VIEW_TABS} onChange={handleTabChange} defaultIndex={0} />
+        {VIEW_TABS.map((tab, idx) => (
+          <TabButton
+            key={idx}
+            isActive={activeTab === idx}
+            onClick={() => {
+              setActiveTab(idx);
+              handleTabChange(idx);
+            }}
+          >
+            {tab}
+          </TabButton>
+        ))}
       </TabWrapper>
 
       <TripHeader>
@@ -242,7 +254,29 @@ export default function TimelinePage() {
                 <Card padding="4px 16px" radius="12px">
                   <DayHeaderCard>
                     <Title>하루 테마</Title>
-                    <Description>{day.theme}</Description>
+                    <TextArea
+                      rows={1}
+                      value={selectedDay?.theme || ''}
+                      placeholder="하루 테마 입력"
+                      onChange={(e) =>
+                        setDaysData((prev) =>
+                          prev.map((day, idx) =>
+                            idx === selectedDayIndex
+                              ? { ...day, theme: e.target.value }
+                              : day,
+                          ),
+                        )
+                      }
+                      style={{
+                        width: '100%',
+                        fontSize: '14px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        resize: 'none',
+                        overflowY: 'auto',
+                      }}
+                    />
                   </DayHeaderCard>
                 </Card>
               </DayHeader>
@@ -281,7 +315,11 @@ export default function TimelinePage() {
 
                           <FixedCardInner width={320}>
                             <Title>{item.title}</Title>
-                            <Description>{item.description}</Description>
+                            <Description>
+                              {item.category
+                                ? `${item.category} - ${item.description}`
+                                : item.description}
+                            </Description>
                           </FixedCardInner>
                         </div>
                       </Card>

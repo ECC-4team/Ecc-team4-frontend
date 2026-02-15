@@ -25,7 +25,25 @@ import {
   TextAreaWrapper,
 } from './ScheduleAddPage.styles';
 
-const CATEGORY_OPTIONS = ['관광', '체험', '쇼핑', '음식', '숙소', '디저트'];
+const CATEGORY_OPTIONS = [
+  '관광',
+  '체험',
+  '쇼핑',
+  '음식',
+  '숙소',
+  '카페/디저트',
+  '기타',
+];
+
+const CATEGORY_COLORS = [
+  '#EF4444',
+  '#F97316',
+  '#2DD4BF',
+  '#22C55E',
+  '#A855F7',
+  '#FACC15',
+  '#636363',
+];
 
 export default function ScheduleAddPage() {
   const navigate = useNavigate();
@@ -204,8 +222,9 @@ export default function ScheduleAddPage() {
           <Row alignTop>
             <Label>카테고리</Label>
             <ChipRow>
-              {CATEGORY_OPTIONS.map((cat) => {
+              {CATEGORY_OPTIONS.map((cat, idx) => {
                 const isSelected = placeDetail?.category === cat;
+                const color = CATEGORY_COLORS[idx];
 
                 return (
                   <div
@@ -216,7 +235,7 @@ export default function ScheduleAddPage() {
                       justifyContent: 'center',
                       padding: '6px 16px',
                       borderRadius: '20px',
-                      backgroundColor: isSelected ? '#2563EB' : '#F3F4F6',
+                      backgroundColor: isSelected ? color : '#F3F4F6',
                       cursor: 'pointer',
                       margin: '4px',
                       userSelect: 'none',
