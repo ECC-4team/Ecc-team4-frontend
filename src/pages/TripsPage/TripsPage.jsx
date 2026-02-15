@@ -34,7 +34,6 @@ const ITEMS_PER_PAGE = 6;
 
 const formatPeriod = (startDate, endDate) => {
   if (!startDate || !endDate) return '';
-
   return `${startDate.replaceAll('-', '.')} - ${endDate.replaceAll('-', '.')}`;
 };
 
@@ -76,7 +75,6 @@ export default function TripsPage() {
 
     try {
       await deleteTrip(id);
-
       setTravels((prev) => prev.filter((travel) => travel.tripId !== id));
     } catch {
       alert('삭제에 실패했어요');
@@ -104,7 +102,7 @@ export default function TripsPage() {
         {currentTravels.map((travel) => (
           <ClickWrapper
             key={travel.tripId}
-            onClick={() => navigate(`/trips/${travel.tripId}/places`)}
+            onClick={() => navigate(`/trips/${travel.tripId}/places`, { state: { trip: travel } })}
           >
             <Card padding="0" radius="12px">
               <CardInner backgroundImage={travel.imageUrl || logoImg}>
