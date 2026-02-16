@@ -11,14 +11,6 @@ import {
 
 import Button from '../../components/Button';
 
-// UI용 로컬 자산 (화면 상단 카테고리 버튼 등에서만 사용)
-import tourImg from '../../assets/관광.png';
-import activityImg from '../../assets/체험.png';
-import shoppingImg from '../../assets/쇼핑.png';
-import foodImg from '../../assets/음식.png';
-import hotelImg from '../../assets/숙소.png';
-import cafeImg from '../../assets/카페디저트.png';
-
 function PlaceDetailPage() {
   const { tripId, placeId } = useParams();
   const navigate = useNavigate();
@@ -30,15 +22,23 @@ function PlaceDetailPage() {
   const [memo, setMemo] = useState('');
   const [previewImages, setPreviewImages] = useState([]); 
   const [newFiles, setNewFiles] = useState([]); 
+  
+  // ✅ 핵심: 삭제된 사진 URL을 기억하는 '블랙리스트' (새로고침 시에도 유지되게 로컬스토리지 활용)
+  const [deletedPhotos, setDeletedPhotos] = useState(() => {
+    const saved = localStorage.getItem(`deleted_${placeId}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isMemoEditing, setIsMemoEditing] = useState(false);
 
-  // ✅ [강력 제지] 기본 이미지로 의심되는 모든 키워드 차단 리스트
-  const FORBIDDEN_LIST = [
-    '관광', '체험', '쇼핑', '음식', '숙소', '카페', '디저트',
-    'tour', 'activity', 'shopping', 'food', 'hotel', 'cafe', 'dessert',
-    'category', 'default', 'basic', '.png' // 보통 진짜 사진은 .jpg나 .jpeg인 경우가 많으므로 .png를 의심군에 넣음
+  const categories = [
+    { label: '관광', color: '#EF4444' }, { label: '체험', color: '#F97316' },
+    { label: '쇼핑', color: '#2DD4BF' }, { label: '음식', color: '#22C55E' },
+    { label: '숙소', color: '#A855F7' }, { label: '카페/디저트', color: '#FACC15' }
   ];
+
+  const FORBIDDEN_LIST = ['관광', '체험', '쇼핑', '음식', '숙소', '카페', '디저트', '.png'];
 
   useEffect(() => {
     if (placeId !== 'new') {
@@ -48,40 +48,27 @@ function PlaceDetailPage() {
           if (response.data) {
             const { name, category, description, imageUrls, createdAt } = response.data;
             
-            // ✅ [강제 필터링] 
-            // 1. Cloudinary 주소가 아니면 일단 차단
-            // 2. FORBIDDEN_LIST에 포함된 단어가 URL에 하나라도 있으면 차단
-            const cleanUrls = (imageUrls || []).filter(url => {
-              if (typeof url !== 'string') return false;
-              const isCloudinary = url.includes('cloudinary.com');
-              const hasForbiddenWord = FORBIDDEN_LIST.some(word => url.toLowerCase().includes(word.toLowerCase()));
-              
-              // 클라우디너리 주소이면서 + 금지 단어가 하나도 없는 것만 "진짜 사진"으로 인정
-              return isCloudinary && !hasForbiddenWord;
-            });
+            // 진짜 사진만 필터링
+            const cleanUrls = (imageUrls || []).filter(url => 
+              url?.includes('cloudinary.com') && !FORBIDDEN_LIST.some(word => url.includes(word))
+            );
 
             setPreviewImages(cleanUrls);
             setPlaceName(name || '');
             setSelectedCategory(category || '');
             setMemo(description || '');
             setPlaceDate(createdAt?.split('T')[0] || '');
-            setIsEditing(false);
           }
-        } catch (error) {
-          setIsEditing(true);
-        }
+        } catch (error) { setIsEditing(true); }
       };
       fetchDetail();
-    } else {
-      setIsEditing(true);
-      setPlaceDate(new Date().toISOString().split('T')[0]);
     }
   }, [placeId, tripId]);
 
-  const handleCategoryChange = (catLabel) => {
-    if (!isEditing) return;
-    setSelectedCategory(catLabel);
-  };
+  // ✅ 삭제 리스트가 바뀔 때마다 로컬스토리지에 저장
+  useEffect(() => {
+    localStorage.setItem(`deleted_${placeId}`, JSON.stringify(deletedPhotos));
+  }, [deletedPhotos, placeId]);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
@@ -94,53 +81,42 @@ function PlaceDetailPage() {
   };
 
   const removeImage = (index) => {
+    const targetImage = previewImages[index];
+
+    // ✅ 만약 서버에서 온 URL이면 '영구 삭제 리스트'에 추가
+    if (typeof targetImage === 'string' && targetImage.startsWith('http')) {
+      setDeletedPhotos(prev => [...new Set([...prev, targetImage])]);
+    }
+
+    // 새 파일(data:) 삭제 처리
+    if (typeof targetImage === 'string' && targetImage.startsWith('data:')) {
+      const dataIdx = previewImages.slice(0, index).filter(img => img.startsWith('data:')).length;
+      setNewFiles(prev => prev.filter((_, i) => i !== dataIdx));
+    }
+
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
-    setNewFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
     if (!placeName) return alert('장소명을 입력해주세요!');
-    
     const formData = new FormData();
-    // 백엔드가 createdAt을 거부하므로 아예 제외
-    const jsonData = { 
-      name: placeName, 
-      description: memo || "", 
-      category: selectedCategory || "" 
-    };
-    
+    const jsonData = { name: placeName, description: memo || "", category: selectedCategory || "" };
     formData.append('data', new Blob([JSON.stringify(jsonData)], { type: 'application/json' }));
     
-    // ✅ 저장할 때도 사용자가 새로 올린 '진짜 파일'들만 전송
-    if (newFiles.length > 0) {
-      newFiles.forEach(file => {
-        formData.append('images', file);
-      });
-    }
+    // 새로 추가한 파일만 전송 (기존 사진은 이미 서버에 있음)
+    newFiles.forEach(file => formData.append('images', file));
 
     try {
       const config = { headers: { 'Content-Type': 'multipart/form-data' } };
-      if (placeId === 'new') {
-        await axios.post(`/trips/${tripId}/places`, formData, config);
-      } else {
-        await axios.patch(`/trips/${tripId}/places/${placeId}`, formData, config);
-      }
+      if (placeId === 'new') await axios.post(`/trips/${tripId}/places`, formData, config);
+      else await axios.patch(`/trips/${tripId}/places/${placeId}`, formData, config);
+      
       alert('저장되었습니다!');
       setIsEditing(false);
+      setNewFiles([]); // 전송 완료 후 비우기
       navigate(`/trips/${tripId}/places`); 
-    } catch (error) {
-      alert(`저장 실패: ${error.response?.data?.message || "입력 형식을 확인해주세요."}`);
-    }
+    } catch (error) { alert("저장 실패"); }
   };
-
-  const categories = [
-    { label: '관광', color: '#EF4444' },
-    { label: '체험', color: '#F97316' },
-    { label: '쇼핑', color: '#2DD4BF' },
-    { label: '음식', color: '#22C55E' },
-    { label: '숙소', color: '#A855F7' },
-    { label: '카페/디저트', color: '#FACC15' }
-  ];
 
   return (
     <Container>
@@ -155,52 +131,34 @@ function PlaceDetailPage() {
               <input className="name-input" value={placeName} onChange={(e) => setPlaceName(e.target.value)} placeholder="장소명" />
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
                 <FiCalendar color="#6B7280" />
-                <input type="date" value={placeDate} onChange={(e) => setPlaceDate(e.target.value)}
-                  style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '5px 10px', color: '#6B7280' }} />
+                <input type="date" value={placeDate} onChange={(e) => setPlaceDate(e.target.value)} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '5px 10px' }} />
               </div>
             </EditInputArea>
           ) : (
-            <>
-              <h2>{placeName || '장소명'}</h2>
-              <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6B7280', marginTop: '5px' }}>
-                <FiCalendar /><span>{placeDate}</span>
-              </div>
-            </>
+            <><h2>{placeName}</h2><div className="date-display"><FiCalendar /><span>{placeDate}</span></div></>
           )}
         </TitleSection>
 
         <CategoryGroup>
           {categories.map((cat) => (
-            <CategoryBtn key={cat.label} isSelected={selectedCategory === cat.label} activeColor={cat.color} onClick={() => handleCategoryChange(cat.label)}>
-              {cat.label}
-            </CategoryBtn>
+            <CategoryBtn key={cat.label} isSelected={selectedCategory === cat.label} activeColor={cat.color} onClick={() => isEditing && setSelectedCategory(cat.label)}>{cat.label}</CategoryBtn>
           ))}
         </CategoryGroup>
 
         <CardList>
-          {/* ✅ [렌더링 단절] previewImages 중 base64(새 사진)이거나 금지단어가 없는 URL만 출력 */}
-          {previewImages?.map((img, idx) => {
-            // 새로 올린 사진(data:로 시작)은 통과
-            if (typeof img === 'string' && img.startsWith('data:')) {
-              return (
-                <PhotoCard key={idx}>
-                  <img src={img} alt="preview" />
-                  {isEditing && <DeleteImgBtn onClick={() => removeImage(idx)}><FiX /></DeleteImgBtn>}
-                </PhotoCard>
-              );
-            }
-            
-            // 기존 사진 중 금지 키워드가 있으면 렌더링하지 않음
-            const isForbidden = FORBIDDEN_LIST.some(word => img?.toLowerCase().includes(word.toLowerCase()));
-            if (isForbidden) return null;
-
-            return (
+          {previewImages
+            // ✅ [강력 필터] 삭제 리스트(deletedPhotos)에 들어있는 URL은 절대 렌더링 안 함
+            .filter(img => !deletedPhotos.includes(img))
+            .map((img, idx) => (
               <PhotoCard key={idx}>
                 <img src={img} alt="preview" />
-                {isEditing && <DeleteImgBtn onClick={() => removeImage(idx)}><FiX /></DeleteImgBtn>}
+                {isEditing && (
+                  <DeleteImgBtn onClick={() => removeImage(idx)}>
+                    <FiX />
+                  </DeleteImgBtn>
+                )}
               </PhotoCard>
-            );
-          })}
+            ))}
           
           {isEditing && (
             <AddMoreBtn onClick={() => fileInputRef.current.click()}>
