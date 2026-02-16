@@ -41,7 +41,7 @@ export default function TripsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [filter, setFilter] = useState(1);
+  const [filter, setFilter] = useState(2);
   const [currentPage, setCurrentPage] = useState(0);
   const [travels, setTravels] = useState([]);
 
@@ -102,7 +102,11 @@ export default function TripsPage() {
         {currentTravels.map((travel) => (
           <ClickWrapper
             key={travel.tripId}
-            onClick={() => navigate(`/trips/${travel.tripId}/places`, { state: { trip: travel } })}
+            onClick={() =>
+              navigate(`/trips/${travel.tripId}/places`, {
+                state: { trip: travel },
+              })
+            }
           >
             <Card padding="0" radius="12px">
               <CardInner backgroundImage={travel.imageUrl || logoImg}>

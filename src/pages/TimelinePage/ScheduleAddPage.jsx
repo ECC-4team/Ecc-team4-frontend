@@ -32,7 +32,6 @@ const CATEGORY_OPTIONS = [
   '음식',
   '숙소',
   '카페/디저트',
-  '기타',
 ];
 
 const CATEGORY_COLORS = [
@@ -42,8 +41,14 @@ const CATEGORY_COLORS = [
   '#22C55E',
   '#A855F7',
   '#FACC15',
-  '#636363',
 ];
+
+const formatTime = (date) => {
+  if (!date) return '';
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
 
 export default function ScheduleAddPage() {
   const navigate = useNavigate();
@@ -67,24 +72,55 @@ export default function ScheduleAddPage() {
     const fetchPlaces = async () => {
       try {
         const res = await getPlaces(tripIdNum);
-        const options = Array.isArray(res.data)
-          ? res.data.map((place) => ({
-              value: place.placeId,
-              label: place.name,
-            }))
-          : [];
+        const dataArray = Array.isArray(res.data) ? res.data : [];
+        const options = dataArray.map((place) => ({
+          value: place.placeId,
+          label: place.name,
+          category: place.category || '',
+          description: place.description || '',
+          coverImageUrl: place.coverImageUrl || '',
+        }));
         setPlaces(options);
       } catch {
-        alert('실패');
+        alert('장소 목록 로딩 실패');
       }
     };
-
     fetchPlaces();
   }, [tripIdNum]);
 
   useEffect(() => {
+    const fetchInitialData = async () => {
+      if (isEditMode) {
+        try {
+          const resTimeline = await getTripTimeline(tripIdNum);
+          const allItems = resTimeline.data.days.flatMap((day) =>
+            day.items.map((item) => ({ ...item, dayDate: day.dayDate })),
+          );
+          const item = allItems.find((i) => i.timelineId === timelineIdNum);
+          if (!item) return;
+
+          setSelectedPlace(item.placeId);
+          setSelectedDate(new Date(item.dayDate));
+          setStartTime(new Date(`1970-01-01T${item.startTime}`));
+          setEndTime(new Date(`1970-01-01T${item.endTime}`));
+        } catch {
+          alert('일정 조회 실패');
+        }
+      }
+    };
+
+    fetchInitialData();
+  }, [isEditMode, tripIdNum, timelineIdNum]);
+
+  useEffect(() => {
     if (!selectedPlace) {
       setPlaceDetail(null);
+      return;
+    }
+
+    const foundPlace = places.find((p) => p.value === selectedPlace);
+    if (foundPlace) {
+      setPlaceDetail(foundPlace);
       return;
     }
 
@@ -93,45 +129,12 @@ export default function ScheduleAddPage() {
         const res = await getPlaceDetail(tripIdNum, selectedPlace);
         setPlaceDetail(res.data);
       } catch {
-        alert('실패');
+        alert('장소 상세 정보 불러오기 실패');
       }
     };
 
     fetchPlaceDetail();
-  }, [selectedPlace, tripIdNum]);
-
-  useEffect(() => {
-    if (!isEditMode) return;
-
-    const fetchTimelineDetail = async () => {
-      try {
-        const res = await getTripTimeline(tripIdNum);
-
-        const allItems = res.data.days.flatMap((day) =>
-          day.items.map((item) => ({
-            ...item,
-            dayDate: day.dayDate,
-          })),
-        );
-
-        const item = allItems.find((i) => i.timelineId === timelineIdNum);
-
-        if (!item) return;
-
-        setSelectedPlace(item.placeId);
-
-        setSelectedDate(new Date(item.dayDate));
-
-        setStartTime(new Date(`1970-01-01T${item.startTime}`));
-
-        setEndTime(new Date(`1970-01-01T${item.endTime}`));
-      } catch {
-        alert('일정 조회 실패');
-      }
-    };
-
-    fetchTimelineDetail();
-  }, [isEditMode, tripIdNum, timelineIdNum]);
+  }, [selectedPlace, places, tripIdNum]);
 
   const handleSave = async () => {
     if (!startTime || !endTime || !selectedPlace) return;
@@ -141,9 +144,9 @@ export default function ScheduleAddPage() {
     try {
       const timelineData = {
         dayDate: selectedDate.toISOString().slice(0, 10),
-        startTime: startTime.toTimeString().slice(0, 5),
-        endTime: endTime.toTimeString().slice(0, 5),
-        placeId: selectedPlace,
+        startTime: formatTime(startTime),
+        endTime: formatTime(endTime),
+        placeId: Number(selectedPlace),
       };
 
       if (isEditMode) {
@@ -172,10 +175,11 @@ export default function ScheduleAddPage() {
             <Label>장소</Label>
             <Select
               options={places}
-              value={places.find((p) => p.value === selectedPlace)}
-              onChange={(selectedOption) =>
-                setSelectedPlace(selectedOption?.value || null)
-              }
+              value={selectedPlace ?? ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedPlace(val === '' ? null : Number(val));
+              }}
               style={{ flex: 1 }}
             />
           </Row>
@@ -223,7 +227,7 @@ export default function ScheduleAddPage() {
             <Label>카테고리</Label>
             <ChipRow>
               {CATEGORY_OPTIONS.map((cat, idx) => {
-                const isSelected = placeDetail?.category === cat;
+                const isSelected = placeDetail?.category?.trim() === cat;
                 const color = CATEGORY_COLORS[idx];
 
                 return (
@@ -259,6 +263,7 @@ export default function ScheduleAddPage() {
                 placeholder="장소 설명"
                 value={placeDetail?.description || ''}
                 readOnly
+                onChange={() => {}}
                 style={{ flex: 1 }}
               />
             </TextAreaWrapper>
