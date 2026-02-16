@@ -6,6 +6,7 @@ import {
   updateTripDays,
 } from '../../services/timeline';
 import { getPlaceDetail } from '../../services/places';
+import { getTripDetail } from '../../services/trip-main';
 
 import Card from '../../components/Card';
 import Input from '../../components/Input';
@@ -70,6 +71,18 @@ export default function TimelinePage() {
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
+    async function fetchTripTitle() {
+      try {
+        const res = await getTripDetail(tripIdNum);
+        setTripTitle(res.data.data.title || '여행');
+      } catch {
+        setTripTitle('여행');
+      }
+    }
+    fetchTripTitle();
+  }, [tripIdNum]);
+
+  useEffect(() => {
     async function fetchTimeline() {
       try {
         const res = await getTripTimeline(tripIdNum);
@@ -117,9 +130,9 @@ export default function TimelinePage() {
         );
 
         setDaysData(mappedDays);
-        setTripTitle(res.data.tripTitle || '여행');
-        setNights(res.data.nights || 0);
-        setDays(res.data.daysCount || mappedDays.length);
+
+        setDays(mappedDays.length);
+        setNights(mappedDays.length > 0 ? mappedDays.length - 1 : 0);
       } catch {
         alert('타임라인 조회 실패');
       }
@@ -189,7 +202,7 @@ export default function TimelinePage() {
 
       alert('저장 완료');
 
-      navigate('/trips');
+      navigate(`/trips/${tripIdNum}/places`);
     } catch {
       alert('저장 실패');
     }
@@ -253,28 +266,27 @@ export default function TimelinePage() {
 
                 <Card padding="4px 16px" radius="12px">
                   <DayHeaderCard>
-                    <Title>하루 테마</Title>
-                    <TextArea
-                      rows={1}
-                      value={selectedDay?.theme || ''}
+                    <Title style={{ flexShrink: 0, minWidth: '80px' }}>
+                      하루 테마
+                    </Title>
+                    <input
+                      value={day.theme || ''}
                       placeholder="하루 테마 입력"
                       onChange={(e) =>
                         setDaysData((prev) =>
-                          prev.map((day, idx) =>
+                          prev.map((d, idx) =>
                             idx === selectedDayIndex
-                              ? { ...day, theme: e.target.value }
-                              : day,
+                              ? { ...d, theme: e.target.value }
+                              : d,
                           ),
                         )
                       }
                       style={{
-                        width: '100%',
+                        flex: 1,
                         fontSize: '14px',
-                        border: '1px solid #E5E7EB',
+                        padding: '6px 8px',
+                        border: '1px solid transparent',
                         borderRadius: '6px',
-                        padding: '4px 8px',
-                        resize: 'none',
-                        overflowY: 'auto',
                       }}
                     />
                   </DayHeaderCard>

@@ -71,7 +71,7 @@ export default function TripCreatePage() {
       try {
         setIsLoading(true);
         const res = await getTripDetail(tripId);
-        const data = res.data;
+        const data = res.data.data;
 
         setForm({
           title: data.title || '',
@@ -123,14 +123,27 @@ export default function TripCreatePage() {
     try {
       setIsLoading(true);
 
-      const data = {
-        title: form.title,
-        destination: form.destination,
-        isDomestic: form.type === 'domestic',
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        description: form.memo,
-      };
+      let data;
+
+      if (isEditMode) {
+        // 수정 모드 → 날짜 제외
+        data = {
+          title: form.title,
+          destination: form.destination,
+          isDomestic: form.type === 'domestic',
+          description: form.memo,
+        };
+      } else {
+        // 생성 모드 → 날짜 포함
+        data = {
+          title: form.title,
+          destination: form.destination,
+          isDomestic: form.type === 'domestic',
+          startDate: formatDateToLocal(startDate),
+          endDate: formatDateToLocal(endDate),
+          description: form.memo,
+        };
+      }
 
       const formData = new FormData();
 
@@ -197,18 +210,18 @@ export default function TripCreatePage() {
                   value={formatDateToLocal(startDate)}
                   placeholder="시작일"
                   readOnly
-                  onClick={handleStartClick}
+                  onClick={isEditMode ? undefined : handleStartClick}
                 />
 
                 <input
                   value={formatDateToLocal(endDate)}
                   placeholder="종료일"
                   readOnly
-                  onClick={handleEndClick}
+                  onClick={isEditMode ? undefined : handleEndClick}
                 />
               </div>
 
-              {openPicker === 'start' && (
+              {!isEditMode && openPicker === 'start' && (
                 <DatePicker
                   selected={startDate}
                   onChange={(date) => {
@@ -219,7 +232,7 @@ export default function TripCreatePage() {
                   inline
                 />
               )}
-              {openPicker === 'end' && (
+              {!isEditMode && openPicker === 'end' && (
                 <DatePicker
                   selected={endDate}
                   onChange={(date) => {

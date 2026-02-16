@@ -116,7 +116,8 @@ export const DayLabel = styled.span`
 
 export const DayHeaderCard = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 2px;
   min-width: 220px;
 `;

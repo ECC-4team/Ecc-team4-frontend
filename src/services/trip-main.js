@@ -17,5 +17,9 @@ export const deleteTrip = (tripId) => {
 };
 
 export const updateTrip = (tripId, formData) => {
-  return api.patch(`/trips/${tripId}`, formData);
+  return api.patch(`/trips/${tripId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
