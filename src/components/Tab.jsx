@@ -5,11 +5,18 @@ export default function Tab({
   tabs = ['Tab1', 'Tab2'],
   onChange,
   defaultIndex = 0,
+  selectedIndex,
 }) {
-  const [activeIndex, setActiveIndex] = useState(defaultIndex);
+  const [internalIndex, setInternalIndex] = useState(defaultIndex);
+
+  const activeIndex =
+    selectedIndex !== undefined ? selectedIndex : internalIndex;
 
   const handleClick = (index) => {
-    setActiveIndex(index);
+    if (selectedIndex === undefined) {
+      setInternalIndex(index);
+    }
+
     if (onChange) onChange(index);
   };
 

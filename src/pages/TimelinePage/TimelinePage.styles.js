@@ -154,7 +154,7 @@ export const TimeColumn = styled.div`
 
 export const Dot = styled.div`
   position: absolute;
-  left: 82px;
+  left: 84px;
   top: 8px;
   width: 12px;
   height: 12px;
