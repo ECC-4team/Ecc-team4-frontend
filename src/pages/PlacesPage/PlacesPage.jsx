@@ -12,7 +12,7 @@ import {
 
 import Button from '../../components/Button';
 
-// 기본 카테고리 이미지 import
+// 기본 아이콘 이미지들
 import defaultImg from '../../assets/emptyimage.png';
 import tourImg from '../../assets/관광.png';
 import activityImg from '../../assets/체험.png';
@@ -28,6 +28,7 @@ function PlacesPage() {
   const [tripTitle, setTripTitle] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // 카테고리별 기본 이미지 반환 함수
   const getCategoryImg = (category) => {
     if (!category) return defaultImg;
     const cat = category.trim();
@@ -40,25 +41,33 @@ function PlacesPage() {
     return defaultImg;
   };
 
-  // ✅ [최종 수정] Cloudinary 주소와 더미 주소를 완벽히 구분합니다.
+  // ✅ [수정 완료] coverImageUrl 반영 및 썸네일 결정 로직
   const getDisplayImage = (place) => {
-    const urls = Array.isArray(place.imageUrls) ? place.imageUrls : [];
+    if (!place) return defaultImg;
+
+    // 1. 확인된 서버 데이터 키(coverImageUrl)를 최우선으로 가져오고, 
+    //    없을 경우를 대비해 객체 내 모든 URL을 탐색합니다.
+    const rawImages = place.coverImageUrl || place.imageUrls || place.images || [];
+    const urls = Array.isArray(rawImages) ? rawImages : [rawImages];
     
-    // 1. 진짜 사진 찾기: 사용자님이 주신 'cloudinary' 주소를 최우선으로 찾습니다.
-    const realPhoto = urls.find(url => 
-      url && typeof url === 'string' &&
-      url.includes('cloudinary.com') && // ✅ Cloudinary 주소인지 확인
-      !url.includes('nzvsch') && 
-      !url.includes('emptyimage')
-    );
+    // 만약 위에서 못 찾았다면 객체 안의 모든 문자열 중 http 주소를 다 긁어옵니다.
+    const allUrls = urls.length > 0 ? urls : Object.values(place).filter(val => typeof val === 'string' && val.startsWith('http'));
 
-    // 2. 만약 cloudinary 주소가 없다면 다른 http 주소라도 찾습니다.
-    const fallbackPhoto = !realPhoto ? urls.find(url => 
-      url && typeof url === 'string' && url.startsWith('http') && !url.includes('nzvsch')
-    ) : null;
+    // 2. 삭제 리스트 확인 (String 변환으로 안전하게 비교)
+    const savedDeleted = localStorage.getItem(`deleted_${String(place.placeId)}`);
+    const deletedPhotos = savedDeleted ? JSON.parse(savedDeleted) : [];
 
-    // 🏆 진짜 사진(Cloudinary) > 일반 사진 > 카테고리 기본 이미지 순서입니다.
-    return realPhoto || fallbackPhoto || getCategoryImg(place.category);
+    // 3. 진짜 사진 찾기
+    const realPhoto = allUrls.find(url => {
+      if (!url) return false;
+      // 상세페이지에서 삭제(X)한 사진은 제외
+      if (deletedPhotos.includes(url)) return false;
+      // 사용자가 올린 진짜 사진(Cloudinary) 여부 확인
+      return url.includes('cloudinary.com');
+    });
+
+    // 🏆 진짜 사진이 있으면 사진을, 없으면 카테고리 아이콘을 반환합니다.
+    return realPhoto || getCategoryImg(place.category);
   };
 
   useEffect(() => {
@@ -69,6 +78,7 @@ function PlacesPage() {
         if (tripRes.data?.data) setTripTitle(tripRes.data.data.title);
 
         const res = await axios.get(`/trips/${tripId}/places`);
+        // res.data가 배열인지 확인 후 세팅
         const finalData = Array.isArray(res.data) ? res.data : (res.data.places || res.data.data || []);
         setPlaces(finalData);
       } catch (err) {
@@ -82,11 +92,14 @@ function PlacesPage() {
 
   const handleDelete = async (e, placeId) => {
     e.stopPropagation();
-    if (!window.confirm("삭제하시겠습니까?")) return;
+    if (!window.confirm("장소를 삭제하시겠습니까?")) return;
     try {
       await axios.delete(`/trips/${tripId}/places/${placeId}`);
+      localStorage.removeItem(`deleted_${String(placeId)}`);
       setPlaces(prev => prev.filter(p => p.placeId !== placeId));
-    } catch (err) { alert("삭제 실패"); }
+    } catch (err) {
+      alert("삭제 실패");
+    }
   };
 
   if (loading) return <Container>로딩 중...</Container>;
@@ -95,7 +108,11 @@ function PlacesPage() {
     <Container>
       <MainCard>
         <SectionTitle>MY VISITS</SectionTitle>
-        {tripTitle && <div style={{ marginBottom: '20px', padding: '8px 16px', backgroundColor: '#333', color: 'white', borderRadius: '8px', display: 'inline-block', fontSize: '14px' }}>{tripTitle}</div>}
+        {tripTitle && (
+          <div style={{ marginBottom: '20px', padding: '8px 16px', backgroundColor: '#333', color: 'white', borderRadius: '8px', display: 'inline-block', fontSize: '14px' }}>
+            {tripTitle}
+          </div>
+        )}
         <TabSection>
           <TabButton onClick={() => navigate(`/trips/${tripId}/timeline`)}>일정</TabButton>
           <TabButton isActive={true}>장소</TabButton>
@@ -103,9 +120,10 @@ function PlacesPage() {
         <PlaceGrid>
           {places.map((place) => (
             <PlaceCard key={place.placeId} onClick={() => navigate(`/trips/${tripId}/places/${place.placeId}`)}>
-              <TrashIcon onClick={(e) => handleDelete(e, place.placeId)}><FiTrash2 size={18} /></TrashIcon>
+              <TrashIcon onClick={(e) => handleDelete(e, place.placeId)}>
+                <FiTrash2 size={18} />
+              </TrashIcon>
               <ImagePlaceholder>
-                {/* ✅ 개선된 필터링 로직 적용 */}
                 <img 
                   src={getDisplayImage(place)} 
                   alt={place.name} 
@@ -121,15 +139,22 @@ function PlacesPage() {
                     place.category === '숙소' ? '#A855F7' : place.category === '카페/디저트' ? '#FACC15' : '#587CFF'
                   }
                 >
-                  {place.category ? place.category : '✈'}
+                  {place.category || '✈'}
                 </PlaceTag>
                 <div className="name-text">{place.name}</div>
               </CardInfo>
             </PlaceCard>
           ))}
-          <AddCard onClick={() => navigate(`/trips/${tripId}/places/new`)}><FiPlus size={40} /><span>장소 추가</span></AddCard>
+          <AddCard onClick={() => navigate(`/trips/${tripId}/places/new`)}>
+            <FiPlus size={40} />
+            <span>장소 추가</span>
+          </AddCard>
         </PlaceGrid>
-        <FooterArea><Button bg="#587CFF" color="white" radius="50px" padding="10px 40px" onClick={() => navigate('/trips')}>목록으로 돌아가기</Button></FooterArea>
+        <FooterArea>
+          <Button bg="#587CFF" color="white" radius="50px" padding="10px 40px" onClick={() => navigate('/trips')}>
+            목록으로 돌아가기
+          </Button>
+        </FooterArea>
       </MainCard>
     </Container>
   );
