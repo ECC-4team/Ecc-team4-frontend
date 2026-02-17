@@ -12,7 +12,6 @@ import {
 
 import Button from '../../components/Button';
 
-// 기본 아이콘 이미지들
 import defaultImg from '../../assets/emptyimage.png';
 import tourImg from '../../assets/관광.png';
 import activityImg from '../../assets/체험.png';
@@ -28,7 +27,6 @@ function PlacesPage() {
   const [tripTitle, setTripTitle] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // 카테고리별 기본 이미지 반환 함수
   const getCategoryImg = (category) => {
     if (!category) return defaultImg;
     const cat = category.trim();
@@ -41,32 +39,23 @@ function PlacesPage() {
     return defaultImg;
   };
 
-  // ✅ [수정 완료] coverImageUrl 반영 및 썸네일 결정 로직
   const getDisplayImage = (place) => {
     if (!place) return defaultImg;
 
-    // 1. 확인된 서버 데이터 키(coverImageUrl)를 최우선으로 가져오고, 
-    //    없을 경우를 대비해 객체 내 모든 URL을 탐색합니다.
     const rawImages = place.coverImageUrl || place.imageUrls || place.images || [];
     const urls = Array.isArray(rawImages) ? rawImages : [rawImages];
     
-    // 만약 위에서 못 찾았다면 객체 안의 모든 문자열 중 http 주소를 다 긁어옵니다.
     const allUrls = urls.length > 0 ? urls : Object.values(place).filter(val => typeof val === 'string' && val.startsWith('http'));
 
-    // 2. 삭제 리스트 확인 (String 변환으로 안전하게 비교)
     const savedDeleted = localStorage.getItem(`deleted_${String(place.placeId)}`);
     const deletedPhotos = savedDeleted ? JSON.parse(savedDeleted) : [];
 
-    // 3. 진짜 사진 찾기
     const realPhoto = allUrls.find(url => {
       if (!url) return false;
-      // 상세페이지에서 삭제(X)한 사진은 제외
       if (deletedPhotos.includes(url)) return false;
-      // 사용자가 올린 진짜 사진(Cloudinary) 여부 확인
       return url.includes('cloudinary.com');
     });
 
-    // 🏆 진짜 사진이 있으면 사진을, 없으면 카테고리 아이콘을 반환합니다.
     return realPhoto || getCategoryImg(place.category);
   };
 
@@ -78,7 +67,6 @@ function PlacesPage() {
         if (tripRes.data?.data) setTripTitle(tripRes.data.data.title);
 
         const res = await axios.get(`/trips/${tripId}/places`);
-        // res.data가 배열인지 확인 후 세팅
         const finalData = Array.isArray(res.data) ? res.data : (res.data.places || res.data.data || []);
         setPlaces(finalData);
       } catch (err) {

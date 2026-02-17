@@ -19,10 +19,9 @@ export const SectionTitle = styled.h1`
   margin-bottom: 20px;
 `;
 
-/* 여행 명칭 배지 스타일 추가/수정 */
 export const TripNameBadge = styled.div`
   display: inline-block;
-  background-color: #333333; /* 이미지 속 어두운 회색 적용 */
+  background-color: #333333; 
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 8px;
@@ -32,7 +31,7 @@ export const TripNameBadge = styled.div`
   cursor: default;
 
   &:hover {
-    background-color: #333333; /* 호버 시에도 색상 유지 */
+    background-color: #333333; 
   }
 `;
 

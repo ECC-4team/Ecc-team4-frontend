@@ -140,7 +140,7 @@ export const MemoBox = styled.div`
   
   .memo-content-wrapper { 
     display: flex; 
-    justify-content: space-between; /* 텍스트-아이콘 양끝 정렬 */
+    justify-content: space-between; 
     align-items: flex-start; 
     gap: 10px;
     width: 100%;

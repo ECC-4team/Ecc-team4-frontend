@@ -141,7 +141,6 @@ function PlaceDetailPage() {
 
       const convertedExistingFiles = await Promise.all(realUserUrls.map(url => urlToFile(url)));
       
-      // ✅ 수정된 부분: 기존 파일들을 배열의 앞(0번 인덱스)에 배치하여 썸네일 유지
       let finalFiles = [
         ...convertedExistingFiles.filter(f => f !== null),
         ...newFiles
