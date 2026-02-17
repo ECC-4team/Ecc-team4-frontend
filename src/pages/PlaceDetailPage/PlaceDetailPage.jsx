@@ -25,12 +25,18 @@ function PlaceDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isMemoEditing, setIsMemoEditing] = useState(false);
 
-  // ✅ 기본 이미지를 완벽히 차단하기 위한 키워드 리스트
   const FORBIDDEN_LIST = [
-    '관광', '체험', '쇼핑', '음식', '숙소', '카페', '디저트', 
-    'tour', 'activity', 'shopping', 'food', 'hotel', 'cafe', 'dessert', 
-    'category', 'default', 'basic', 'empty', 'png'
+    'tour', 'activity', 'shopping', 'food', 'hotel', 'cafe', 'dessert', 'png'
   ];
+
+  const CATEGORY_IMAGE_MAP = {
+    '관광': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/tour.png',
+    '체험': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/activity.png',
+    '쇼핑': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/shopping.png',
+    '음식': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/food.png',
+    '숙소': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/hotel.png',
+    '카페/디저트': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1771146720/KakaoTalk_20260215_125850088_05_gy3bvu.png'
+  };
 
   const categories = [
     { label: '관광', color: '#EF4444' },
@@ -49,13 +55,13 @@ function PlaceDetailPage() {
           if (response.data) {
             const { name, category, description, imageUrls, createdAt } = response.data;
             
-            // ✅ [수정] 조회 시점부터 기본 이미지를 철저히 필터링
-            // Cloudinary 주소이면서 + 금지 단어가 하나도 없는 것만 previewImages에 담습니다.
             const cleanUrls = (imageUrls || []).filter(url => {
               if (typeof url !== 'string' || url.trim() === '') return false;
               const isCloudinary = url.includes('cloudinary.com');
+              const isDefaultDir = url.includes('/default/'); 
               const hasForbiddenWord = FORBIDDEN_LIST.some(word => url.toLowerCase().includes(word.toLowerCase()));
-              return isCloudinary && !hasForbiddenWord;
+              
+              return isCloudinary && !isDefaultDir && !hasForbiddenWord;
             });
 
             setPreviewImages(cleanUrls);
@@ -76,14 +82,24 @@ function PlaceDetailPage() {
     }
   }, [placeId, tripId]);
 
-  const urlToFile = async (url) => {
+  const urlToFile = async (url, customName) => {
     try {
-      const response = await fetch(url);
+      const encodedUrl = url.split('/').map(part => 
+        part.startsWith('http') ? part : encodeURIComponent(part)
+      ).join('/').replace(/http%3A/g, 'http:').replace(/https%3A/g, 'https:');
+
+      const response = await fetch(encodedUrl, { 
+        mode: 'cors', 
+        cache: 'no-cache' 
+      });
+      
+      if (!response.ok) throw new Error(`Fetch failed with status: ${response.status}`);
+      
       const data = await response.blob();
-      const filename = url.split('/').pop().split('?')[0] || 'existing_image.jpg';
+      const filename = customName || url.split('/').pop() || 'image.png';
       return new File([data], filename, { type: data.type });
     } catch (error) {
-      console.error("파일 변환 실패:", url, error);
+      console.error("urlToFile 변환 에러:", url, error);
       return null;
     }
   };
@@ -110,25 +126,40 @@ function PlaceDetailPage() {
   const handleSave = async () => {
     if (!placeName) return alert('장소명을 입력해주세요!');
     const formData = new FormData();
-    const jsonData = { name: placeName, description: memo || "", category: selectedCategory || "" };
+    const jsonData = { 
+      name: placeName, 
+      description: memo || "", 
+      category: selectedCategory || "" 
+    };
     formData.append('data', new Blob([JSON.stringify(jsonData)], { type: 'application/json' }));
     
     try {
-      // ✅ [수정] 저장 시에도 필터링된 '진짜' 사진들만 골라냅니다.
-      const existingUrls = previewImages.filter(img => {
+      const realUserUrls = previewImages.filter(img => {
         if (typeof img !== 'string' || !img.startsWith('http')) return false;
-        const isCloudinary = img.includes('cloudinary.com');
-        const hasForbiddenWord = FORBIDDEN_LIST.some(word => img.toLowerCase().includes(word.toLowerCase()));
-        return isCloudinary && !hasForbiddenWord;
+        return img.includes('cloudinary.com') && !img.includes('/default/');
       });
 
-      const convertedFiles = await Promise.all(existingUrls.map(url => urlToFile(url)));
-      const allFiles = [...convertedFiles.filter(f => f !== null), ...newFiles];
+      const convertedExistingFiles = await Promise.all(realUserUrls.map(url => urlToFile(url)));
+      
+      // ✅ 수정된 부분: 기존 파일들을 배열의 앞(0번 인덱스)에 배치하여 썸네일 유지
+      let finalFiles = [
+        ...convertedExistingFiles.filter(f => f !== null),
+        ...newFiles
+      ];
 
-      // images 필드에 통합하여 전송 (명세 규격 준수)
-      if (allFiles.length > 0) {
-        allFiles.forEach(file => formData.append('images', file));
+      if (finalFiles.length === 0 && selectedCategory) {
+        const remoteDefaultUrl = CATEGORY_IMAGE_MAP[selectedCategory];
+        let defaultImageFile = await urlToFile(remoteDefaultUrl, `default_${selectedCategory}.png`);
+        
+        if (!defaultImageFile) {
+          const localUrl = `/src/assets/${selectedCategory}.png`;
+          defaultImageFile = await urlToFile(localUrl, `default_${selectedCategory}.png`);
+        }
+        
+        if (defaultImageFile) finalFiles.push(defaultImageFile);
       }
+
+      finalFiles.forEach(file => formData.append('images', file));
 
       const config = { headers: { 'Content-Type': 'multipart/form-data' } };
       if (placeId === 'new') {
@@ -141,7 +172,7 @@ function PlaceDetailPage() {
       setIsEditing(false);
       navigate(`/trips/${tripId}/places`); 
     } catch (error) {
-      console.error("저장 에러 상세:", error.response?.data);
+      console.error("저장 에러:", error);
       alert("저장에 실패했습니다.");
     }
   };
