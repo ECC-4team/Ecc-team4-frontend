@@ -14,8 +14,8 @@ export default function Layout() {
       if (res.data.success) {
         alert(res.data.data || '로그아웃 되었습니다.');
       }
-    } catch (err) {
-      console.error('로그아웃 세션 만료 혹은 서버 오류:', err);
+    } catch {
+      alert('로그아웃 세션 만료 혹은 서버 오류:');
     } finally {
       localStorage.removeItem('accessToken'); // 토큰 삭제
       navigate('/', { replace: true }); // 로그인 페이지로 이동
@@ -85,7 +85,7 @@ export default function Layout() {
       <Header>
         <Brand onClick={() => navigate('/trips')}>
           <Logo src={logoImg} alt="Project4 Logo" />
-          <SiteName>Project4</SiteName>
+          <SiteName>trip-diary</SiteName>
         </Brand>
 
         {/* 3. 수정된 핸들러 연결 */}

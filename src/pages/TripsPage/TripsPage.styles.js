@@ -78,7 +78,8 @@ export const Country = styled.div`
   font-weight: 700;
   color: #111827;
   z-index: 2;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+  -webkit-text-stroke: 1px white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 export const Period = styled.div`
@@ -88,7 +89,8 @@ export const Period = styled.div`
   font-size: 12px;
   color: #111827;
   z-index: 2;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+  -webkit-text-stroke: 1px white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 export const FloatingAddButton = styled.button`
