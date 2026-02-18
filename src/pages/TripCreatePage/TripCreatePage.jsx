@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   createTrip,
   getTripDetail,
@@ -45,6 +45,12 @@ const formatDateToLocal = (date) => {
 export default function TripCreatePage() {
   const navigate = useNavigate();
   const { tripId } = useParams();
+  const location = useLocation();
+
+  const query = new URLSearchParams(location.search);
+  const isViewMode =
+    query.get('mode') === 'view' || location.pathname.endsWith('/view');
+  const isEditMode = location.pathname.endsWith('/edit');
 
   const [form, setForm] = useState({
     title: '',
@@ -61,11 +67,9 @@ export default function TripCreatePage() {
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isEditMode = Boolean(tripId);
-
   // 상세보기 / 수정 모드일 때 데이터 불러오기
   useEffect(() => {
-    if (!isEditMode) return;
+    if (!tripId) return;
 
     const fetchTrip = async () => {
       try {
@@ -91,7 +95,7 @@ export default function TripCreatePage() {
     };
 
     fetchTrip();
-  }, [tripId, isEditMode]);
+  }, [tripId]);
 
   /* 입력 핸들러 */
   const handleChange = (key) => (e) =>
@@ -179,6 +183,8 @@ export default function TripCreatePage() {
               value={form.title}
               onChange={handleChange('title')}
               placeholder="여행 이름"
+              readOnly={isViewMode}
+              disabled={isViewMode}
             />
           </Row>
 
@@ -188,6 +194,8 @@ export default function TripCreatePage() {
               value={form.destination}
               onChange={handleChange('destination')}
               placeholder="여행지"
+              readOnly={isViewMode}
+              disabled={isViewMode}
             />
           </Row>
 
@@ -197,7 +205,7 @@ export default function TripCreatePage() {
               <Tab
                 tabs={['국내', '해외']}
                 selectedIndex={form.type === 'domestic' ? 0 : 1}
-                onChange={handleTypeChange}
+                onChange={isViewMode ? undefined : handleTypeChange}
               />
             </TabContainer>
           </Row>
@@ -210,14 +218,18 @@ export default function TripCreatePage() {
                   value={formatDateToLocal(startDate)}
                   placeholder="시작일"
                   readOnly
-                  onClick={isEditMode ? undefined : handleStartClick}
+                  onClick={
+                    isViewMode || isEditMode ? undefined : handleStartClick
+                  }
                 />
 
                 <input
                   value={formatDateToLocal(endDate)}
                   placeholder="종료일"
                   readOnly
-                  onClick={isEditMode ? undefined : handleEndClick}
+                  onClick={
+                    isViewMode || isEditMode ? undefined : handleEndClick
+                  }
                 />
               </div>
 
@@ -232,7 +244,7 @@ export default function TripCreatePage() {
                   inline
                 />
               )}
-              {!isEditMode && openPicker === 'end' && (
+              {!isViewMode && !isEditMode && openPicker === 'end' && (
                 <DatePicker
                   selected={endDate}
                   onChange={(date) => {
@@ -256,11 +268,13 @@ export default function TripCreatePage() {
                   <div className="placeholder">이미지를 선택해주세요</div>
                 )}
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
+                {!isViewMode && (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                )}
               </ImageUploadWrapper>
             </div>
           </Row>
@@ -272,6 +286,7 @@ export default function TripCreatePage() {
                 value={form.memo}
                 onChange={handleChange('memo')}
                 placeholder="여행 메모"
+                readOnly={isViewMode}
               />
             </div>
           </Row>
@@ -279,9 +294,13 @@ export default function TripCreatePage() {
       </FormContainer>
 
       <FloatingButtonWrapper>
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isEditMode ? '수정 저장' : '새 여행 추가'}
-        </Button>
+        {isViewMode ? (
+          <Button onClick={() => navigate(-1)}>뒤로가기</Button>
+        ) : (
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isEditMode ? '수정 저장' : '새 여행 추가'}
+          </Button>
+        )}
       </FloatingButtonWrapper>
     </PageWrapper>
   );

@@ -98,51 +98,74 @@ export default function TripsPage() {
         </BlueSelectWrapper>
       </FilterBar>
 
-      <Grid>
-        {currentTravels.map((travel) => (
-          <ClickWrapper
-            key={travel.tripId}
-            onClick={() =>
-              navigate(`/trips/${travel.tripId}/places`, {
-                state: { trip: travel },
-              })
-            }
-          >
-            <Card padding="0" radius="12px">
-              <CardInner backgroundImage={travel.imageUrl || logoImg}>
-                <CardOverlay>
-                  <Country>
-                    {travel.title} - {travel.destination}
-                  </Country>
-                  <Period>
-                    {formatPeriod(travel.startDate, travel.endDate)}
-                  </Period>
+      {currentTravels.length > 0 ? (
+        <Grid>
+          {currentTravels.map((travel) => (
+            <ClickWrapper
+              key={travel.tripId}
+              onClick={() =>
+                navigate(`/trips/${travel.tripId}/places`, {
+                  state: { trip: travel },
+                })
+              }
+            >
+              <Card padding="0" radius="12px">
+                <CardInner backgroundImage={travel.imageUrl || logoImg}>
+                  <CardOverlay>
+                    <Country>
+                      {travel.title} - {travel.destination}
+                    </Country>
+                    <Period>
+                      {formatPeriod(travel.startDate, travel.endDate)}
+                    </Period>
 
-                  <CardActions>
-                    <EditButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/trips/${travel.tripId}/edit`);
-                      }}
-                    >
-                      수정
-                    </EditButton>
+                    <CardActions>
+                      <EditButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/trips/${travel.tripId}/view`);
+                        }}
+                      >
+                        조회
+                      </EditButton>
+                      <EditButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/trips/${travel.tripId}/edit`);
+                        }}
+                      >
+                        수정
+                      </EditButton>
 
-                    <DeleteButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(travel.tripId);
-                      }}
-                    >
-                      삭제
-                    </DeleteButton>
-                  </CardActions>
-                </CardOverlay>
-              </CardInner>
-            </Card>
-          </ClickWrapper>
-        ))}
-      </Grid>
+                      <DeleteButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(travel.tripId);
+                        }}
+                      >
+                        삭제
+                      </DeleteButton>
+                    </CardActions>
+                  </CardOverlay>
+                </CardInner>
+              </Card>
+            </ClickWrapper>
+          ))}
+        </Grid>
+      ) : (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '200px',
+            color: '#6b7280',
+            fontSize: '16px',
+          }}
+        >
+          생성된 여행이 없습니다.
+        </div>
+      )}
 
       <PaginationWrapper>
         <ReactPaginate

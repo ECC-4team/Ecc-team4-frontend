@@ -137,7 +137,30 @@ export default function ScheduleAddPage() {
   }, [selectedPlace, places, tripIdNum]);
 
   const handleSave = async () => {
-    if (!startTime || !endTime || !selectedPlace) return;
+    if (!selectedPlace) {
+      alert('장소를 선택해주세요.');
+      return;
+    }
+
+    if (!startTime) {
+      alert('시작 시간을 선택해주세요.');
+      return;
+    }
+
+    if (!endTime) {
+      alert('종료 시간을 선택해주세요.');
+      return;
+    }
+
+    if (endTime <= startTime) {
+      alert('종료 시간은 시작 시간보다 이후여야 합니다.');
+      return;
+    }
+
+    if (!selectedDate) {
+      alert('날짜를 선택해주세요.');
+      return;
+    }
 
     setLoading(true);
 
@@ -152,16 +175,16 @@ export default function ScheduleAddPage() {
       if (isEditMode) {
         await updateTimelineItem(tripIdNum, timelineIdNum, timelineData);
 
-        alert('수정 완료');
+        alert('수정이 완료되었습니다.');
       } else {
         await addTimelineItem(tripIdNum, timelineData);
 
-        alert('추가 완료');
+        alert('추가가 완료되었습니다.');
       }
 
       navigate(-1);
     } catch {
-      alert('실패');
+      alert('일정 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -173,15 +196,17 @@ export default function ScheduleAddPage() {
         <Card>
           <Row>
             <Label>장소</Label>
-            <Select
-              options={places}
-              value={selectedPlace ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSelectedPlace(val === '' ? null : Number(val));
-              }}
-              style={{ flex: 1 }}
-            />
+            <div style={{ flex: 1 }}>
+              <Select
+                options={places}
+                value={selectedPlace ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedPlace(val === '' ? null : Number(val));
+                }}
+                width="100%"
+              />
+            </div>
           </Row>
 
           <Row>

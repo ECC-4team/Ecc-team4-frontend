@@ -8,6 +8,8 @@ export default function Input({
   padding,
   radius,
   type = 'text',
+  readOnly,
+  disabled,
 }) {
   return (
     <StyledInput
@@ -18,6 +20,8 @@ export default function Input({
       width={width}
       padding={padding}
       radius={radius}
+      readOnly={readOnly}
+      disabled={disabled}
     />
   );
 }
