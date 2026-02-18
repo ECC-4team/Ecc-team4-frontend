@@ -78,19 +78,25 @@ export const Country = styled.div`
   font-weight: 700;
   color: #111827;
   z-index: 2;
-  -webkit-text-stroke: 1px white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow:
+    1px 1px 0 white,
+    -1px 1px 0 white,
+    1px -1px 0 white,
+    -1px -1px 0 white;
 `;
 
 export const Period = styled.div`
   position: absolute;
   right: 16px;
   bottom: 14px;
-  font-size: 12px;
+  font-size: 15px;
   color: #111827;
   z-index: 2;
-  -webkit-text-stroke: 1px white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow:
+    0.5px 0.5px 0 white,
+    -0.5px 0.5px 0 white,
+    0.5px -0.5px 0 white,
+    -0.5px -0.5px 0 white;
 `;
 
 export const FloatingAddButton = styled.button`
