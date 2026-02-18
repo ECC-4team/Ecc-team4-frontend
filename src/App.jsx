@@ -25,6 +25,8 @@ function App() {
           <Route path="/trips/new" element={<TripCreatePage />} />
           {/* 여행 수정 */}
           <Route path="/trips/:tripId/edit" element={<TripCreatePage />} />
+          {/* 여행 보기 */}
+          <Route path="/trips/:tripId/view" element={<TripCreatePage />} />
 
           {/* 장소 리스트 */}
           <Route path="/trips/:tripId/places" element={<PlacesPage />} />

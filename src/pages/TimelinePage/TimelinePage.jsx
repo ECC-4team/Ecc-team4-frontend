@@ -201,8 +201,6 @@ export default function TimelinePage() {
       await updateTripDays(tripIdNum, requestData);
 
       alert('저장 완료');
-
-      navigate(`/trips/${tripIdNum}/places`);
     } catch {
       alert('저장 실패');
     }
@@ -347,6 +345,11 @@ export default function TimelinePage() {
           <BlueLine />
 
           <SideContent>
+            <Title>
+              {selectedDay?.date || '날짜 선택'}
+              {selectedDay?.dayLabel && ` (${selectedDay.dayLabel})`}
+            </Title>
+
             <Card padding="16px" radius="12px">
               <Title>오늘의 메모</Title>
               <Description>오늘의 하루를 기록해보세요</Description>

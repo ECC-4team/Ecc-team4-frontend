@@ -9,6 +9,8 @@ export default function TextArea({
   padding,
   radius,
   mb,
+  readOnly,
+  disabled,
 }) {
   return (
     <TextAreaWrapper mb={mb}>
@@ -20,6 +22,8 @@ export default function TextArea({
         rows={rows}
         padding={padding}
         radius={radius}
+        readOnly={readOnly}
+        disabled={disabled}
       />
     </TextAreaWrapper>
   );
