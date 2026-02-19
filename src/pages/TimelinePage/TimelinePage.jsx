@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react'; // useCallback 추가
+import { useState, useEffect, useCallback } from 'react';
 import {
   getTripTimeline,
   deleteTimelineItem,
@@ -119,8 +119,14 @@ export default function TimelinePage() {
                 console.error('장소 상세 조회 실패');
               }
 
-              const category = placeDetail.category || '';
-              const finalImageUrl = placeDetail.coverImageUrl || DEFAULT_IMAGES[category] || DEFAULT_IMAGES.default;
+              // 수정 포인트: 카테고리 앞뒤 공백 제거 및 매칭 확인
+              const category = placeDetail.category ? placeDetail.category.trim() : '';
+              
+              // 이미지 우선순위: 서버 커버이미지 -> 카테고리 기본이미지 -> 전체 기본이미지
+              const finalImageUrl = 
+                placeDetail.coverImageUrl || 
+                DEFAULT_IMAGES[category] || 
+                DEFAULT_IMAGES.default;
 
               return {
                 timelineId: item.timelineId,
@@ -132,6 +138,7 @@ export default function TimelinePage() {
                 imageUrl: finalImageUrl,
                 category: category,
                 imageUrls: placeDetail.imageUrls || [],
+                content: item.content || '',
               };
             }),
           );
@@ -163,6 +170,7 @@ export default function TimelinePage() {
   const selectedDay = daysData[selectedDayIndex] || {};
 
   const handleDeleteSchedule = async (timelineId) => {
+    if (!window.confirm('일정을 삭제하시겠습니까?')) return;
     try {
       await deleteTimelineItem(timelineId);
       setDaysData((prev) =>
@@ -216,9 +224,7 @@ export default function TimelinePage() {
       };
       await updateTripDays(tripIdNum, requestData);
       alert('저장 완료');
-      
       await fetchTimeline(); 
-      
     } catch {
       alert('저장 실패');
     }
@@ -325,7 +331,11 @@ export default function TimelinePage() {
                     <ContentRow>
                       <Card padding="8px" radius="12px">
                         <FixedCardInner width={160}>
-                          <ImageBox src={item.imageUrl} alt={item.title} />
+                          <ImageBox 
+                            src={item.imageUrl} 
+                            alt={item.title} 
+                            onError={(e) => { e.target.src = defaultImg; }} // 이미지 로드 실패 시 대체
+                          />
                         </FixedCardInner>
                       </Card>
 
@@ -449,7 +459,7 @@ function MoreMenu({ timelineId, placeId, handleDeleteSchedule }) {
           style={{
             position: 'absolute',
             top: '24px',
-            left: '0',
+            right: '0', // 팝업 위치 개선
             background: '#fff',
             border: '1px solid #e5e7eb',
             borderRadius: '8px',
