@@ -119,10 +119,8 @@ export default function TimelinePage() {
                 console.error('장소 상세 조회 실패');
               }
 
-              // 수정 포인트: 카테고리 앞뒤 공백 제거 및 매칭 확인
               const category = placeDetail.category ? placeDetail.category.trim() : '';
               
-              // 이미지 우선순위: 서버 커버이미지 -> 카테고리 기본이미지 -> 전체 기본이미지
               const finalImageUrl = 
                 placeDetail.coverImageUrl || 
                 DEFAULT_IMAGES[category] || 
@@ -149,7 +147,10 @@ export default function TimelinePage() {
             dayLabel: getDayLabel(day.dayDate),
             theme: day.themeTitle,
             memo: day.dayNote,
-            budget: { planned: day.budgetPlanned, spent: day.budgetSpent },
+            budget: { 
+                planned: day.budgetPlanned ?? 0, 
+                spent: day.budgetSpent ?? 0 
+            },
             schedules,
           };
         }),
@@ -196,6 +197,8 @@ export default function TimelinePage() {
   };
 
   const handleBudgetChange = (field, value) => {
+    // 숫자와 빈 문자열만 허용 (입력 편의를 위해)
+    const numericValue = value.replace(/[^0-9]/g, '');
     setDaysData((prev) =>
       prev.map((day, index) =>
         index === selectedDayIndex
@@ -203,7 +206,7 @@ export default function TimelinePage() {
               ...day,
               budget: {
                 ...day.budget,
-                [field]: value,
+                [field]: numericValue,
               },
             }
           : day,
@@ -216,16 +219,19 @@ export default function TimelinePage() {
       const requestData = {
         days: daysData.map((day) => ({
           dayId: day.dayId,
-          themeTitle: day.theme,
-          dayNote: day.memo,
-          budgetPlanned: Number(day.budget.planned) || 0,
-          budgetSpent: Number(day.budget.spent) || 0,
+          themeTitle: day.theme || "",
+          dayNote: day.memo || "",
+          budgetPlanned: parseInt(day.budget.planned, 10) || 0,
+          budgetSpent: parseInt(day.budget.spent, 10) || 0,
         })),
       };
+      
       await updateTripDays(tripIdNum, requestData);
       alert('저장 완료');
+      // 저장 후 최신 데이터를 다시 불러와서 상태를 동기화합니다.
       await fetchTimeline(); 
-    } catch {
+    } catch (err) {
+      console.error('Save Error:', err);
       alert('저장 실패');
     }
   };
@@ -334,7 +340,7 @@ export default function TimelinePage() {
                           <ImageBox 
                             src={item.imageUrl} 
                             alt={item.title} 
-                            onError={(e) => { e.target.src = defaultImg; }} // 이미지 로드 실패 시 대체
+                            onError={(e) => { e.target.src = defaultImg; }} 
                           />
                         </FixedCardInner>
                       </Card>
@@ -402,7 +408,7 @@ export default function TimelinePage() {
                 <BudgetLabel>예산</BudgetLabel>
                 <Input
                   placeholder="0"
-                  value={selectedDay?.budget?.planned || ''}
+                  value={selectedDay?.budget?.planned ?? ''}
                   onChange={(e) =>
                     handleBudgetChange('planned', e.target.value)
                   }
@@ -414,7 +420,7 @@ export default function TimelinePage() {
                 <BudgetLabel>지출</BudgetLabel>
                 <Input
                   placeholder="0"
-                  value={selectedDay?.budget?.spent || ''}
+                  value={selectedDay?.budget?.spent ?? ''}
                   onChange={(e) => handleBudgetChange('spent', e.target.value)}
                 />
                 <Won>원</Won>
@@ -459,7 +465,7 @@ function MoreMenu({ timelineId, placeId, handleDeleteSchedule }) {
           style={{
             position: 'absolute',
             top: '24px',
-            right: '0', // 팝업 위치 개선
+            right: '0',
             background: '#fff',
             border: '1px solid #e5e7eb',
             borderRadius: '8px',
