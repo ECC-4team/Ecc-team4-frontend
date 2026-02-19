@@ -89,7 +89,6 @@ function PlaceDetailPage() {
     
     const formData = new FormData();
     try {
-      // ✅ 1. 사진 처리: 0개일 때 빈 값을 보내 서버에 삭제 신호 전달
       if (previewImages.length > 0) {
         for (const imgObj of previewImages) {
           if (imgObj.isNew && imgObj.file) formData.append('images', imgObj.file);
@@ -99,11 +98,9 @@ function PlaceDetailPage() {
           }
         }
       } else {
-        // 서버가 파일 필드가 비었을 때 무시하지 않도록 명시적으로 빈 값 전송
         formData.append('images', new Blob([], { type: 'application/octet-stream' }));
       }
 
-      // ✅ 2. 텍스트 데이터: 모든 상태값을 포함하여 데이터 유실 방지
       const jsonData = { 
         name: placeName,
         description: memo,
