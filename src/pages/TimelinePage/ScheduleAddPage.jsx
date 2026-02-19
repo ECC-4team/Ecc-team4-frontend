@@ -198,7 +198,7 @@ export default function ScheduleAddPage() {
             <Label>장소</Label>
             <div style={{ flex: 1 }}>
               <Select
-                options={places}
+                options={[{ value: '', label: '장소 선택' }, ...places]}
                 value={selectedPlace ?? ''}
                 onChange={(e) => {
                   const val = e.target.value;
