@@ -55,10 +55,8 @@ function PlacesPage() {
       return !FORBIDDEN_KEYWORDS.some(kw => lowerUrl.includes(kw.toLowerCase()));
     });
 
-    // ✅ 만약 필터링 된 진짜 사진이 없으면, 서버 데이터와 상관없이 무조건 카테고리 기본 이미지 반환
     if (validPhotos.length === 0) return getCategoryImg(place.category);
 
-    // 사진이 있다면 가장 최신 것(마지막 요소)을 반환
     return validPhotos[validPhotos.length - 1];
   };
 
