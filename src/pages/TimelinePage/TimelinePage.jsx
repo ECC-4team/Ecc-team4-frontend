@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // useCallback 추가
 import {
   getTripTimeline,
   deleteTimelineItem,
@@ -7,6 +7,14 @@ import {
 } from '../../services/timeline';
 import { getPlaceDetail } from '../../services/places';
 import { getTripDetail } from '../../services/trip-main';
+
+import defaultImg from '../../assets/emptyimage.png';
+import tourImg from '../../assets/관광.png';
+import activityImg from '../../assets/체험.png';
+import shoppingImg from '../../assets/쇼핑.png';
+import foodImg from '../../assets/음식.png';
+import hotelImg from '../../assets/숙소.png';
+import cafeImg from '../../assets/카페디저트.png';
 
 import Card from '../../components/Card';
 import Input from '../../components/Input';
@@ -47,7 +55,16 @@ import {
 
 const VIEW_TABS = ['일정', '장소'];
 
-// 시간/요일 포맷
+const DEFAULT_IMAGES = {
+  '관광': tourImg,
+  '체험': activityImg,
+  '쇼핑': shoppingImg,
+  '음식': foodImg,
+  '숙소': hotelImg,
+  '카페/디저트': cafeImg,
+  'default': defaultImg
+};
+
 const formatTime = (timeStr) => {
   if (!timeStr) return '';
   return timeStr.slice(0, 5);
@@ -82,75 +99,75 @@ export default function TimelinePage() {
     fetchTripTitle();
   }, [tripIdNum]);
 
-  useEffect(() => {
-    async function fetchTimeline() {
-      try {
-        const res = await getTripTimeline(tripIdNum);
-        const apiDays = res.data.days;
+  const fetchTimeline = useCallback(async () => {
+    try {
+      const res = await getTripTimeline(tripIdNum);
+      const apiDays = res.data.days;
 
-        const mappedDays = await Promise.all(
-          apiDays.map(async (day) => {
-            const schedules = await Promise.all(
-              day.items.map(async (item) => {
-                let placeDetail = {};
-                try {
-                  const detailRes = await getPlaceDetail(
-                    tripIdNum,
-                    item.placeId,
-                  );
-                  placeDetail = detailRes.data;
-                } catch {
-                  alert('장소 상세 조회 실패');
-                }
+      const mappedDays = await Promise.all(
+        apiDays.map(async (day) => {
+          const schedules = await Promise.all(
+            day.items.map(async (item) => {
+              let placeDetail = {};
+              try {
+                const detailRes = await getPlaceDetail(
+                  tripIdNum,
+                  item.placeId,
+                );
+                placeDetail = detailRes.data;
+              } catch {
+                console.error('장소 상세 조회 실패');
+              }
 
-                return {
-                  timelineId: item.timelineId,
-                  time: formatTime(item.startTime),
-                  endTime: formatTime(item.endTime),
-                  title: placeDetail.name || item.placeName,
-                  placeId: item.placeId,
-                  description: placeDetail.description || '',
-                  imageUrl: placeDetail.coverImageUrl || '',
-                  category: placeDetail.category || '',
-                  imageUrls: placeDetail.imageUrls || [],
-                };
-              }),
-            );
+              const category = placeDetail.category || '';
+              const finalImageUrl = placeDetail.coverImageUrl || DEFAULT_IMAGES[category] || DEFAULT_IMAGES.default;
 
-            return {
-              dayId: day.dayId,
-              date: day.dayDate,
-              dayLabel: getDayLabel(day.dayDate),
-              theme: day.themeTitle,
-              memo: day.dayNote,
-              budget: { planned: day.budgetPlanned, spent: day.budgetSpent },
-              schedules,
-            };
-          }),
-        );
+              return {
+                timelineId: item.timelineId,
+                time: formatTime(item.startTime),
+                endTime: formatTime(item.endTime),
+                title: placeDetail.name || item.placeName,
+                placeId: item.placeId,
+                description: placeDetail.description || '',
+                imageUrl: finalImageUrl,
+                category: category,
+                imageUrls: placeDetail.imageUrls || [],
+              };
+            }),
+          );
 
-        setDaysData(mappedDays);
+          return {
+            dayId: day.dayId,
+            date: day.dayDate,
+            dayLabel: getDayLabel(day.dayDate),
+            theme: day.themeTitle,
+            memo: day.dayNote,
+            budget: { planned: day.budgetPlanned, spent: day.budgetSpent },
+            schedules,
+          };
+        }),
+      );
 
-        setDays(mappedDays.length);
-        setNights(mappedDays.length > 0 ? mappedDays.length - 1 : 0);
-      } catch {
-        alert('타임라인 조회 실패');
-      }
+      setDaysData(mappedDays);
+      setDays(mappedDays.length);
+      setNights(mappedDays.length > 0 ? mappedDays.length - 1 : 0);
+    } catch {
+      alert('타임라인 조회 실패');
     }
-
-    fetchTimeline();
   }, [tripIdNum]);
+
+  useEffect(() => {
+    fetchTimeline();
+  }, [fetchTimeline]);
 
   const selectedDay = daysData[selectedDayIndex] || {};
 
   const handleDeleteSchedule = async (timelineId) => {
     try {
       await deleteTimelineItem(timelineId);
-
       setDaysData((prev) =>
         prev.map((day, index) => {
           if (index !== selectedDayIndex) return day;
-
           return {
             ...day,
             schedules: day.schedules.filter((s) => s.timelineId !== timelineId),
@@ -197,10 +214,11 @@ export default function TimelinePage() {
           budgetSpent: Number(day.budget.spent) || 0,
         })),
       };
-
       await updateTripDays(tripIdNum, requestData);
-
       alert('저장 완료');
+      
+      await fetchTimeline(); 
+      
     } catch {
       alert('저장 실패');
     }
@@ -273,7 +291,7 @@ export default function TimelinePage() {
                       onChange={(e) =>
                         setDaysData((prev) =>
                           prev.map((d, idx) =>
-                            idx === selectedDayIndex
+                            idx === index
                               ? { ...d, theme: e.target.value }
                               : d,
                           ),
@@ -399,7 +417,6 @@ export default function TimelinePage() {
               >
                 새 일정 추가
               </Button>
-
               <Button onClick={handleSave}>저장하기</Button>
             </SideFooter>
           </SideContent>
