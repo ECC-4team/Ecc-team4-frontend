@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiPlus, FiChevronLeft, FiCalendar, FiX } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiChevronLeft, FiX } from 'react-icons/fi';
 import axios from '../../services/api'; 
 
 import {
@@ -16,27 +16,13 @@ function PlaceDetailPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const [placeName, setPlaceName] = useState('');
-  const [placeDate, setPlaceDate] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [memo, setMemo] = useState('');
   const [previewImages, setPreviewImages] = useState([]); 
-  const [newFiles, setNewFiles] = useState([]); 
   const [isEditing, setIsEditing] = useState(false);
   const [isMemoEditing, setIsMemoEditing] = useState(false);
-
-  const FORBIDDEN_LIST = [
-    'tour', 'activity', 'shopping', 'food', 'hotel', 'cafe', 'dessert', 'png'
-  ];
-
-  const CATEGORY_IMAGE_MAP = {
-    '관광': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/tour.png',
-    '체험': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/activity.png',
-    '쇼핑': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/shopping.png',
-    '음식': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/food.png',
-    '숙소': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1/default/hotel.png',
-    '카페/디저트': 'https://res.cloudinary.com/dxlycqpyp/image/upload/v1771146720/KakaoTalk_20260215_125850088_05_gy3bvu.png'
-  };
 
   const categories = [
     { label: '관광', color: '#EF4444' },
@@ -47,132 +33,92 @@ function PlaceDetailPage() {
     { label: '카페/디저트', color: '#FACC15' }
   ];
 
+  const FORBIDDEN_KEYWORDS = ['20260215_125850088', 'f8282aa9-a1de-4790-bb63-4faff119ab68', 'food', 'cafe', '/default/'];
+
+  const isRealPhoto = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    return !FORBIDDEN_KEYWORDS.some(kw => url.toLowerCase().includes(kw.toLowerCase()));
+  };
+
   useEffect(() => {
     if (placeId !== 'new') {
       const fetchDetail = async () => {
         try {
           const response = await axios.get(`/trips/${tripId}/places/${placeId}`);
           if (response.data) {
-            const { name, category, description, imageUrls, createdAt } = response.data;
-            
-            const cleanUrls = (imageUrls || []).filter(url => {
-              if (typeof url !== 'string' || url.trim() === '') return false;
-              const isCloudinary = url.includes('cloudinary.com');
-              const isDefaultDir = url.includes('/default/'); 
-              const hasForbiddenWord = FORBIDDEN_LIST.some(word => url.toLowerCase().includes(word.toLowerCase()));
-              
-              return isCloudinary && !isDefaultDir && !hasForbiddenWord;
-            });
-
-            setPreviewImages(cleanUrls);
+            const { name, category, description, imageUrls } = response.data;
             setPlaceName(name || '');
             setSelectedCategory(category || '');
             setMemo(description || '');
-            setPlaceDate(createdAt?.split('T')[0] || '');
-            setIsEditing(false);
+            
+            const onlyRealPhotos = (imageUrls || [])
+              .filter(url => isRealPhoto(url))
+              .map(url => ({ url, file: null, isNew: false }));
+            setPreviewImages(onlyRealPhotos);
           }
-        } catch (error) {
-          console.error("데이터 로드 실패:", error);
-        }
+        } catch (error) { console.error("데이터 로드 실패"); }
       };
       fetchDetail();
-    } else {
-      setIsEditing(true); 
-      setPlaceDate(new Date().toISOString().split('T')[0]);
-    }
+    } else { setIsEditing(true); }
   }, [placeId, tripId]);
 
-  const urlToFile = async (url, customName) => {
+  const urlToFile = async (url) => {
     try {
-      const encodedUrl = url.split('/').map(part => 
-        part.startsWith('http') ? part : encodeURIComponent(part)
-      ).join('/').replace(/http%3A/g, 'http:').replace(/https%3A/g, 'https:');
-
-      const response = await fetch(encodedUrl, { 
-        mode: 'cors', 
-        cache: 'no-cache' 
-      });
-      
-      if (!response.ok) throw new Error(`Fetch failed with status: ${response.status}`);
-      
+      const response = await fetch(url);
       const data = await response.blob();
-      const filename = customName || url.split('/').pop() || 'image.png';
-      return new File([data], filename, { type: data.type });
-    } catch (error) {
-      console.error("urlToFile 변환 에러:", url, error);
-      return null;
-    }
+      const randomId = Math.random().toString(36).substring(2, 11);
+      return new File([data], `photo_${randomId}.png`, { type: data.type });
+    } catch (error) { return null; }
   };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    setNewFiles(prev => [...prev, ...files]);
     files.forEach(file => {
       const reader = new FileReader();
-      reader.onloadend = () => setPreviewImages(prev => [...prev, reader.result]);
+      reader.onloadend = () => {
+        setPreviewImages(prev => [...prev, { url: reader.result, file: file, isNew: true }]);
+      };
       reader.readAsDataURL(file);
     });
   };
 
-  const removeImage = (index) => {
-    const targetImage = previewImages[index];
-    setPreviewImages(prev => prev.filter((_, i) => i !== index));
-    if (typeof targetImage === 'string' && targetImage.startsWith('data:')) {
-      const base64Index = previewImages.slice(0, index).filter(img => typeof img === 'string' && img.startsWith('data:')).length;
-      setNewFiles(prev => prev.filter((_, i) => i !== base64Index));
-    }
-  };
+  const removeImage = (index) => setPreviewImages(prev => prev.filter((_, i) => i !== index));
 
   const handleSave = async () => {
     if (!placeName) return alert('장소명을 입력해주세요!');
-    const formData = new FormData();
-    const jsonData = { 
-      name: placeName, 
-      description: memo || "", 
-      category: selectedCategory || "" 
-    };
-    formData.append('data', new Blob([JSON.stringify(jsonData)], { type: 'application/json' }));
     
+    const formData = new FormData();
     try {
-      const realUserUrls = previewImages.filter(img => {
-        if (typeof img !== 'string' || !img.startsWith('http')) return false;
-        return img.includes('cloudinary.com') && !img.includes('/default/');
-      });
-
-      const convertedExistingFiles = await Promise.all(realUserUrls.map(url => urlToFile(url)));
-      
-      let finalFiles = [
-        ...convertedExistingFiles.filter(f => f !== null),
-        ...newFiles
-      ];
-
-      if (finalFiles.length === 0 && selectedCategory) {
-        const remoteDefaultUrl = CATEGORY_IMAGE_MAP[selectedCategory];
-        let defaultImageFile = await urlToFile(remoteDefaultUrl, `default_${selectedCategory}.png`);
-        
-        if (!defaultImageFile) {
-          const localUrl = `/src/assets/${selectedCategory}.png`;
-          defaultImageFile = await urlToFile(localUrl, `default_${selectedCategory}.png`);
+      // ✅ 1. 사진 처리: 0개일 때 빈 값을 보내 서버에 삭제 신호 전달
+      if (previewImages.length > 0) {
+        for (const imgObj of previewImages) {
+          if (imgObj.isNew && imgObj.file) formData.append('images', imgObj.file);
+          else {
+            const file = await urlToFile(imgObj.url);
+            if (file) formData.append('images', file);
+          }
         }
-        
-        if (defaultImageFile) finalFiles.push(defaultImageFile);
-      }
-
-      finalFiles.forEach(file => formData.append('images', file));
-
-      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
-      if (placeId === 'new') {
-        await axios.post(`/trips/${tripId}/places`, formData, config);
       } else {
-        await axios.patch(`/trips/${tripId}/places/${placeId}`, formData, config);
+        // 서버가 파일 필드가 비었을 때 무시하지 않도록 명시적으로 빈 값 전송
+        formData.append('images', new Blob([], { type: 'application/octet-stream' }));
       }
+
+      // ✅ 2. 텍스트 데이터: 모든 상태값을 포함하여 데이터 유실 방지
+      const jsonData = { 
+        name: placeName,
+        description: memo,
+        category: selectedCategory
+      };
+      formData.append('data', new Blob([JSON.stringify(jsonData)], { type: 'application/json' }));
+
+      if (placeId === 'new') await axios.post(`/trips/${tripId}/places`, formData);
+      else await axios.patch(`/trips/${tripId}/places/${placeId}`, formData);
 
       alert('저장되었습니다!');
       setIsEditing(false);
-      navigate(`/trips/${tripId}/places`); 
-    } catch (error) {
-      console.error("저장 에러:", error);
-      alert("저장에 실패했습니다.");
+      navigate(`/trips/${tripId}/places`);
+    } catch (error) { 
+      alert("저장에 실패했습니다."); 
     }
   };
 
@@ -186,20 +132,15 @@ function PlaceDetailPage() {
         <TitleSection>
           {isEditing ? (
             <EditInputArea>
-              <input className="name-input" value={placeName} onChange={(e) => setPlaceName(e.target.value)} placeholder="장소명" />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                <FiCalendar color="#6B7280" />
-                <input type="date" value={placeDate} onChange={(e) => setPlaceDate(e.target.value)}
-                  style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '5px 10px', color: '#6B7280' }} />
-              </div>
+              <input 
+                className="name-input" 
+                value={placeName} 
+                onChange={(e) => setPlaceName(e.target.value)} 
+                placeholder="장소명을 입력하세요"
+              />
             </EditInputArea>
           ) : (
-            <>
-              <h2>{placeName || '장소명'}</h2>
-              <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6B7280', marginTop: '5px' }}>
-                <FiCalendar /><span>{placeDate}</span>
-              </div>
-            </>
+            <h2>{placeName || '장소명 없음'}</h2>
           )}
         </TitleSection>
 
@@ -217,10 +158,29 @@ function PlaceDetailPage() {
         </CategoryGroup>
 
         <CardList>
-          {previewImages?.map((img, idx) => (
-            <PhotoCard key={idx}>
-              <img src={img} alt="preview" />
-              {isEditing && <DeleteImgBtn onClick={() => removeImage(idx)}><FiX /></DeleteImgBtn>}
+          {previewImages.map((imgObj, idx) => (
+            <PhotoCard 
+              key={idx} 
+              draggable={isEditing}
+              onDragStart={() => isEditing && setDraggedIndex(idx)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!isEditing || draggedIndex === null || draggedIndex === idx) return;
+                const newImages = [...previewImages];
+                const draggedItem = newImages[draggedIndex];
+                newImages.splice(draggedIndex, 1);
+                newImages.splice(idx, 0, draggedItem);
+                setDraggedIndex(idx);
+                setPreviewImages(newImages);
+              }}
+              onDragEnd={() => setDraggedIndex(null)}
+            >
+              <img src={imgObj.url} alt="preview" />
+              {isEditing && (
+                <DeleteImgBtn onClick={(e) => { e.stopPropagation(); removeImage(idx); }}>
+                  <FiX />
+                </DeleteImgBtn>
+              )}
             </PhotoCard>
           ))}
           {isEditing && (
@@ -243,7 +203,7 @@ function PlaceDetailPage() {
               />
             ) : (
               <div className="memo-content-wrapper">
-                <p style={{ whiteSpace: 'pre-wrap', flex: 1, margin: 0 }}>{memo || '메모를 입력하세요.'}</p>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{memo || '메모를 입력하세요.'}</p>
                 {isEditing && <FiEdit2 className="edit-icon" />}
               </div>
             )}
@@ -251,8 +211,13 @@ function PlaceDetailPage() {
         </MemoSection>
 
         <ActionWrapper>
-          <Button bg="#587CFF" padding="10px 40px" radius="50px" onClick={isEditing ? handleSave : () => setIsEditing(true)}>
-            {isEditing ? (placeId === 'new' ? '저장하기' : '수정 완료') : '수정하기'}
+          <Button 
+            bg="#587CFF" 
+            padding="10px 40px" 
+            radius="50px" 
+            onClick={isEditing ? handleSave : () => setIsEditing(true)}
+          >
+            {isEditing ? '저장하기' : '수정하기'}
           </Button>
         </ActionWrapper>
       </MainCard>

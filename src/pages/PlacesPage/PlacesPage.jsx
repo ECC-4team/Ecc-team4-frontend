@@ -27,6 +27,11 @@ function PlacesPage() {
   const [tripTitle, setTripTitle] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const FORBIDDEN_KEYWORDS = [
+    '20260215_125850088', 'f8282aa9-a1de-4790-bb63-4faff119ab68',
+    '9b3e502b-72cc-4388-af18-5f194d722017', 'food', 'cafe', '/default/', 'gy3bvu', 'kakaotalk'
+  ];
+
   const getCategoryImg = (category) => {
     if (!category) return defaultImg;
     const cat = category.trim();
@@ -41,22 +46,20 @@ function PlacesPage() {
 
   const getDisplayImage = (place) => {
     if (!place) return defaultImg;
-
-    const rawImages = place.coverImageUrl || place.imageUrls || place.images || [];
+    const rawImages = place.imageUrls || place.images || place.coverImageUrl || [];
     const urls = Array.isArray(rawImages) ? rawImages : [rawImages];
     
-    const allUrls = urls.length > 0 ? urls : Object.values(place).filter(val => typeof val === 'string' && val.startsWith('http'));
-
-    const savedDeleted = localStorage.getItem(`deleted_${String(place.placeId)}`);
-    const deletedPhotos = savedDeleted ? JSON.parse(savedDeleted) : [];
-
-    const realPhoto = allUrls.find(url => {
-      if (!url) return false;
-      if (deletedPhotos.includes(url)) return false;
-      return url.includes('cloudinary.com');
+    const validPhotos = urls.filter(url => {
+      if (!url || typeof url !== 'string') return false;
+      const lowerUrl = url.toLowerCase();
+      return !FORBIDDEN_KEYWORDS.some(kw => lowerUrl.includes(kw.toLowerCase()));
     });
 
-    return realPhoto || getCategoryImg(place.category);
+    // ✅ 만약 필터링 된 진짜 사진이 없으면, 서버 데이터와 상관없이 무조건 카테고리 기본 이미지 반환
+    if (validPhotos.length === 0) return getCategoryImg(place.category);
+
+    // 사진이 있다면 가장 최신 것(마지막 요소)을 반환
+    return validPhotos[validPhotos.length - 1];
   };
 
   useEffect(() => {
@@ -69,11 +72,8 @@ function PlacesPage() {
         const res = await axios.get(`/trips/${tripId}/places`);
         const finalData = Array.isArray(res.data) ? res.data : (res.data.places || res.data.data || []);
         setPlaces(finalData);
-      } catch (err) {
-        console.error("데이터 로드 실패:", err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error("데이터 로드 실패:", err); } 
+      finally { setLoading(false); }
     };
     fetchData();
   }, [tripId]);
@@ -83,11 +83,8 @@ function PlacesPage() {
     if (!window.confirm("장소를 삭제하시겠습니까?")) return;
     try {
       await axios.delete(`/trips/${tripId}/places/${placeId}`);
-      localStorage.removeItem(`deleted_${String(placeId)}`);
       setPlaces(prev => prev.filter(p => p.placeId !== placeId));
-    } catch (err) {
-      alert("삭제 실패");
-    }
+    } catch (err) { alert("삭제 실패"); }
   };
 
   if (loading) return <Container>로딩 중...</Container>;
@@ -112,21 +109,15 @@ function PlacesPage() {
                 <FiTrash2 size={18} />
               </TrashIcon>
               <ImagePlaceholder>
-                <img 
-                  src={getDisplayImage(place)} 
-                  alt={place.name} 
-                  onError={(e) => { e.target.src = getCategoryImg(place.category); }} 
-                />
+                <img src={getDisplayImage(place)} alt={place.name} onError={(e) => { e.target.src = getCategoryImg(place.category); }} />
               </ImagePlaceholder>
               <CardInfo>
-                <PlaceTag 
-                  style={{ color: 'white' }}
+                <PlaceTag style={{ color: 'white' }}
                   bgColor={
                     place.category === '관광' ? '#EF4444' : place.category === '체험' ? '#F97316' : 
                     place.category === '쇼핑' ? '#2DD4BF' : place.category === '음식' ? '#22C55E' : 
                     place.category === '숙소' ? '#A855F7' : place.category === '카페/디저트' ? '#FACC15' : '#587CFF'
-                  }
-                >
+                  } >
                   {place.category || '✈'}
                 </PlaceTag>
                 <div className="name-text">{place.name}</div>
