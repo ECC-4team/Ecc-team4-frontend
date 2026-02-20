@@ -47,7 +47,7 @@ const formatTime = (date) => {
   if (!date) return '';
   const h = String(date.getHours()).padStart(2, '0');
   const m = String(date.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`; // HH:mm 형식
+  return `${h}:${m}`; 
 };
 
 export default function ScheduleAddPage() {
@@ -66,7 +66,6 @@ export default function ScheduleAddPage() {
   const [endTime, setEndTime] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 메모(장소 설명) 상태 관리
   const [memo, setMemo] = useState('');
 
   const isInvalidTime = startTime && endTime && endTime <= startTime;
@@ -107,7 +106,6 @@ export default function ScheduleAddPage() {
           setStartTime(new Date(`1970-01-01T${item.startTime}`));
           setEndTime(new Date(`1970-01-01T${item.endTime}`));
           
-          // 수정 모드일 때 기존 데이터에서 설명 로드
           setMemo(item.description || item.memo || item.content || '');
         } catch (err) {
           console.error('일정 조회 실패:', err);
@@ -127,7 +125,6 @@ export default function ScheduleAddPage() {
     const foundPlace = places.find((p) => p.value === selectedPlace);
     if (foundPlace) {
       setPlaceDetail(foundPlace);
-      // 새 일정 추가 모드이고 메모가 비어있을 때만 기본 설명 채우기
       if (!isEditMode && !memo) setMemo(foundPlace.description || '');
       return;
     }
@@ -164,15 +161,14 @@ export default function ScheduleAddPage() {
     setLoading(true);
 
     try {
-      // 서버에서 요구할 수 있는 다양한 필드명을 모두 대응하여 객체 생성
       const timelineData = {
         dayDate: selectedDate.toISOString().slice(0, 10),
         startTime: formatTime(startTime),
         endTime: formatTime(endTime),
         placeId: Number(selectedPlace),
-        description: memo || '', // TimelinePage에서 주로 사용하는 필드
-        memo: memo || '',        // 백엔드 DB 컬럼 후보 1
-        content: memo || ''      // 백엔드 DB 컬럼 후보 2
+        description: memo || '', 
+        memo: memo || '',        
+        content: memo || ''      
       };
 
       console.log('Save Request Data:', timelineData);
@@ -187,10 +183,9 @@ export default function ScheduleAddPage() {
 
       navigate(-1);
     } catch (error) {
-      // 에러 발생 시 콘솔에 상세 내용을 찍어 원인 파악을 도움
       console.error('Save Error Response:', error.response?.data);
       console.error('Save Error Message:', error.message);
-      alert('일정 저장 중 오류가 발생했습니다. 개발자 도구 콘솔을 확인해주세요.');
+      alert('일정 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -291,7 +286,7 @@ export default function ScheduleAddPage() {
             <TextAreaWrapper>
               <TextArea
                 rows={6}
-                placeholder="장소 설명을 입력하세요"
+                placeholder="장소 설명"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
                 style={{ flex: 1 }}
