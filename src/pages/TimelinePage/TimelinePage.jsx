@@ -197,7 +197,6 @@ export default function TimelinePage() {
   };
 
   const handleBudgetChange = (field, value) => {
-    // 숫자와 빈 문자열만 허용 (입력 편의를 위해)
     const numericValue = value.replace(/[^0-9]/g, '');
     setDaysData((prev) =>
       prev.map((day, index) =>
@@ -228,7 +227,6 @@ export default function TimelinePage() {
       
       await updateTripDays(tripIdNum, requestData);
       alert('저장 완료');
-      // 저장 후 최신 데이터를 다시 불러와서 상태를 동기화합니다.
       await fetchTimeline(); 
     } catch (err) {
       console.error('Save Error:', err);
